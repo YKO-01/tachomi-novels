@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/library/pages/library_page.dart';
+import '../../features/browse/pages/browse_page.dart';
 import '../../features/novel_details/pages/novel_details_page.dart';
 import '../../features/more/pages/more_page.dart';
 import '../../features/reader/pages/reader_page.dart';
 import '../../features/download_queue/pages/download_queue_page.dart';
-import '../../features/history/pages/history_page.dart';
-import '../../features/updates/pages/updates_page.dart';
 import '../../shared/constants/app_constants.dart';
 
 class AppRouter {
@@ -37,7 +36,7 @@ class AppRouter {
           GoRoute(
             path: AppConstants.routeBrowse,
             name: 'browse',
-            builder: (context, state) => const LibraryPage(), // Browse uses same as Library
+            builder: (context, state) => const BrowsePage(),
           ),
           GoRoute(
             path: AppConstants.routeMore,
@@ -177,15 +176,3 @@ class HistoryPage extends StatelessWidget {
   }
 }
 
-class BrowsePage extends StatelessWidget {
-  const BrowsePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Browse Page'),
-      ),
-    );
-  }
-}

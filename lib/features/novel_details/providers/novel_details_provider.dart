@@ -76,4 +76,17 @@ class NovelDetailsNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>
       });
     });
   }
+
+  void toggleLibrary() {
+    state.whenData((data) {
+      final novel = data['novel'] as Novel;
+      final updatedNovel = novel.copyWith(
+        isInLibrary: !novel.isInLibrary,
+      );
+      state = AsyncValue.data({
+        'novel': updatedNovel,
+        'chapters': data['chapters'],
+      });
+    });
+  }
 }

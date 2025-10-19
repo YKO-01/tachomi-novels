@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
+import '../../../core/services/library_service.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/novel_details_provider.dart';
 
@@ -200,12 +201,27 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // Add to library functionality
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final isInLibrary = ref.watch(isNovelInLibraryProvider(novel.id));
+                          return ElevatedButton.icon(
+                            onPressed: () {
+                              LibraryService.toggleLibrary(novel.id);
+                              // Invalidate the provider to refresh the UI
+                              ref.invalidate(isNovelInLibraryProvider(novel.id));
+                            },
+                            icon: Icon(isInLibrary ? Icons.remove : Icons.add),
+                            label: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isInLibrary 
+                                ? Theme.of(context).colorScheme.error 
+                                : Theme.of(context).colorScheme.primary,
+                              foregroundColor: isInLibrary 
+                                ? Theme.of(context).colorScheme.onError 
+                                : Theme.of(context).colorScheme.onPrimary,
+                            ),
+                          );
                         },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add to Library'),
                       ),
                     ),
                     const SizedBox(width: AppConstants.spacingS),

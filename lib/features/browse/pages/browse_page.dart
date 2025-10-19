@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/models/novel.dart';
+import '../../../core/services/library_service.dart';
 import '../../../shared/widgets/novel_card.dart';
 import '../../../shared/widgets/filter_chip.dart' as custom;
 import '../../../shared/constants/app_constants.dart';
-import '../providers/library_provider.dart';
+import '../providers/browse_provider.dart';
 
-class LibraryPage extends ConsumerStatefulWidget {
-  const LibraryPage({super.key});
+class BrowsePage extends ConsumerStatefulWidget {
+  const BrowsePage({super.key});
 
   @override
-  ConsumerState<LibraryPage> createState() => _LibraryPageState();
+  ConsumerState<BrowsePage> createState() => _BrowsePageState();
 }
 
-class _LibraryPageState extends ConsumerState<LibraryPage> {
+class _BrowsePageState extends ConsumerState<BrowsePage> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = AppConstants.filterAll;
   String _selectedSort = AppConstants.sortPopular;
@@ -24,7 +25,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     super.initState();
     // Load novels when page initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(libraryNotifierProvider.notifier).loadNovels();
+      ref.read(browseNotifierProvider.notifier).loadNovels();
     });
   }
 
@@ -36,14 +37,12 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch library changes to refresh when novels are added/removed
-    ref.watch(libraryNotifierProvider);
-    final libraryState = ref.watch(libraryNotifierProvider);
+    final browseState = ref.watch(browseNotifierProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library'),
+        title: const Text('Browse'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -72,15 +71,21 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                 ),
                 const SizedBox(width: AppConstants.spacingS),
                 custom.FilterChip(
-                  label: AppConstants.filterCompleted,
-                  isSelected: _selectedFilter == AppConstants.filterCompleted,
-                  onTap: () => _onFilterChanged(AppConstants.filterCompleted),
+                  label: AppConstants.filterRomance,
+                  isSelected: _selectedFilter == AppConstants.filterRomance,
+                  onTap: () => _onFilterChanged(AppConstants.filterRomance),
                 ),
                 const SizedBox(width: AppConstants.spacingS),
                 custom.FilterChip(
-                  label: AppConstants.filterOngoing,
-                  isSelected: _selectedFilter == AppConstants.filterOngoing,
-                  onTap: () => _onFilterChanged(AppConstants.filterOngoing),
+                  label: AppConstants.filterBL,
+                  isSelected: _selectedFilter == AppConstants.filterBL,
+                  onTap: () => _onFilterChanged(AppConstants.filterBL),
+                ),
+                const SizedBox(width: AppConstants.spacingS),
+                custom.FilterChip(
+                  label: AppConstants.filterSliceOfLife,
+                  isSelected: _selectedFilter == AppConstants.filterSliceOfLife,
+                  onTap: () => _onFilterChanged(AppConstants.filterSliceOfLife),
                 ),
               ],
             ),
@@ -88,7 +93,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           
           // Novels Grid
           Expanded(
-            child: libraryState.when(
+            child: browseState.when(
               data: (novels) => _buildNovelsGrid(novels),
               loading: () => const Center(
                 child: CircularProgressIndicator(),
@@ -116,7 +121,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                     const SizedBox(height: AppConstants.spacingM),
                     ElevatedButton(
                       onPressed: () {
-                        ref.invalidate(libraryNotifierProvider);
+                        ref.invalidate(browseNotifierProvider);
                       },
                       child: const Text('Retry'),
                     ),
@@ -137,7 +142,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.library_books_outlined,
+              Icons.explore_outlined,
               size: 64,
               color: Colors.grey,
             ),
@@ -189,7 +194,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     setState(() {
       _selectedFilter = filter;
     });
-    ref.read(libraryNotifierProvider.notifier).filterNovels(filter);
+    ref.read(browseNotifierProvider.notifier).filterNovels(filter);
   }
 
   void _navigateToNovelDetails(String novelId) {
@@ -205,20 +210,29 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Consumer(
+              builder: (context, ref, child) {
+                final isInLibrary = ref.watch(isNovelInLibraryProvider(novel.id));
+                return ListTile(
+                  leading: Icon(isInLibrary ? Icons.remove_circle : Icons.library_add),
+                  title: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    if (isInLibrary) {
+                      _removeFromLibrary(novel);
+                    } else {
+                      _addToLibrary(novel);
+                    }
+                  },
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.favorite_border),
               title: Text(novel.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
               onTap: () {
                 Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).toggleFavorite(novel.id);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.download),
-              title: Text(novel.isDownloaded ? 'Remove Download' : 'Download'),
-              onTap: () {
-                Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).toggleDownload(novel.id);
+                ref.read(browseNotifierProvider.notifier).toggleFavorite(novel.id);
               },
             ),
             ListTile(
@@ -231,6 +245,38 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _addToLibrary(Novel novel) {
+    // Add novel to library
+    ref.read(browseNotifierProvider.notifier).addToLibrary(novel);
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${novel.title} added to library'),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'View Library',
+          onPressed: () {
+            context.go(AppConstants.routeLibrary);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _removeFromLibrary(Novel novel) {
+    // Remove novel from library
+    ref.read(browseNotifierProvider.notifier).removeFromLibrary(novel);
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${novel.title} removed from library'),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -255,7 +301,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(libraryNotifierProvider.notifier).searchNovels(_searchController.text);
+              ref.read(browseNotifierProvider.notifier).searchNovels(_searchController.text);
             },
             child: const Text('Search'),
           ),
@@ -281,7 +327,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).sortNovels(value!);
+                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
               },
             ),
             RadioListTile<String>(
@@ -293,7 +339,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).sortNovels(value!);
+                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
               },
             ),
             RadioListTile<String>(
@@ -305,7 +351,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).sortNovels(value!);
+                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
               },
             ),
             RadioListTile<String>(
@@ -317,7 +363,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(libraryNotifierProvider.notifier).sortNovels(value!);
+                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
               },
             ),
           ],

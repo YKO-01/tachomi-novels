@@ -32,13 +32,14 @@ class NovelAdapter extends TypeAdapter<Novel> {
       isDownloaded: fields[12] as bool,
       currentChapter: fields[13] as int,
       lastRead: fields[14] as DateTime?,
+      isInLibrary: fields[15] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Novel obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class NovelAdapter extends TypeAdapter<Novel> {
       ..writeByte(13)
       ..write(obj.currentChapter)
       ..writeByte(14)
-      ..write(obj.lastRead);
+      ..write(obj.lastRead)
+      ..writeByte(15)
+      ..write(obj.isInLibrary);
   }
 
   @override

@@ -43,6 +43,8 @@ class AppConstants {
   
   // Filter Options
   static const String filterAll = 'All';
+  static const String filterCompleted = 'Completed';
+  static const String filterOngoing = 'Ongoing';
   static const String filterRomance = 'Romance';
   static const String filterBL = 'BL';
   static const String filterSliceOfLife = 'Slice of Life';

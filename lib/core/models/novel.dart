@@ -49,6 +49,9 @@ class Novel extends HiveObject {
   @HiveField(14)
   final DateTime? lastRead;
 
+  @HiveField(15)
+  final bool isInLibrary;
+
   Novel({
     required this.id,
     required this.title,
@@ -65,6 +68,7 @@ class Novel extends HiveObject {
     this.isDownloaded = false,
     this.currentChapter = 0,
     this.lastRead,
+    this.isInLibrary = false,
   });
 
   Novel copyWith({
@@ -83,6 +87,7 @@ class Novel extends HiveObject {
     bool? isDownloaded,
     int? currentChapter,
     DateTime? lastRead,
+    bool? isInLibrary,
   }) {
     return Novel(
       id: id ?? this.id,
@@ -100,6 +105,7 @@ class Novel extends HiveObject {
       isDownloaded: isDownloaded ?? this.isDownloaded,
       currentChapter: currentChapter ?? this.currentChapter,
       lastRead: lastRead ?? this.lastRead,
+      isInLibrary: isInLibrary ?? this.isInLibrary,
     );
   }
 }

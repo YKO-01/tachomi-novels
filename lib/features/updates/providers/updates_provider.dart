@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
-import '../../download_queue/providers/download_queue_provider.dart';
 
 enum UpdateStatus { newChapter, unread, read, downloaded }
 

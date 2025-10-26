@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../core/services/novel_service.dart';
-import '../../../core/services/history_service.dart';
+import '../../history/providers/history_provider.dart';
 
 class ReaderState {
   final Novel? novel;
@@ -50,8 +51,9 @@ class ReaderState {
 
 class ReaderNotifier extends StateNotifier<ReaderState> {
   final NovelService _novelService;
+  final Ref _ref;
 
-  ReaderNotifier(this._novelService) : super(const ReaderState());
+  ReaderNotifier(this._novelService, this._ref) : super(const ReaderState());
 
   Future<void> loadChapter(String novelId, String chapterId) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -117,35 +119,36 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
 
   Future<void> trackReadingProgress(double progress) async {
     if (state.novel != null && state.chapter != null) {
-      print('ReaderProvider: Tracking reading progress - ${state.novel!.title}, ${state.chapter!.title}, Progress: $progress');
-      // Add to history with current progress
-      await HistoryService.addToHistory(state.novel!, state.chapter!, progress);
+      debugPrint('ReaderProvider: Tracking reading progress - ${state.novel!.title}, ${state.chapter!.title}, Progress: $progress');
+      // Add novel to history when reading
+      await _ref.read(historyProvider.notifier).addNovelToHistory(state.novel!, state.chapter!);
     } else {
-      print('ReaderProvider: Cannot track progress - novel or chapter is null');
+      debugPrint('ReaderProvider: Cannot track progress - novel or chapter is null');
     }
   }
 
   Future<void> markChapterAsCompleted() async {
     if (state.novel != null && state.chapter != null) {
-      // Mark chapter as fully read (100% progress)
-      await HistoryService.markChapterAsRead(state.novel!.id, state.chapter!.id);
+      debugPrint('ReaderProvider: Chapter completed - ${state.novel!.title}, ${state.chapter!.title}');
+      // Update history with completed chapter
+      await _ref.read(historyProvider.notifier).addNovelToHistory(state.novel!, state.chapter!);
     }
   }
 
   Future<void> updateReadingProgress(double progress) async {
     if (state.novel != null && state.chapter != null) {
-      print('ReaderProvider: Updating reading progress - ${state.novel!.title}, ${state.chapter!.title}, Progress: $progress');
-      // Update progress in history
-      await HistoryService.updateProgress(state.novel!.id, state.chapter!.id, progress);
+      debugPrint('ReaderProvider: Updating reading progress - ${state.novel!.title}, ${state.chapter!.title}, Progress: $progress');
+      // Update history with current reading progress
+      await _ref.read(historyProvider.notifier).addNovelToHistory(state.novel!, state.chapter!);
     } else {
-      print('ReaderProvider: Cannot update progress - novel or chapter is null');
+      debugPrint('ReaderProvider: Cannot update progress - novel or chapter is null');
     }
   }
 }
 
 final readerProvider = StateNotifierProvider<ReaderNotifier, ReaderState>((ref) {
   final novelService = ref.watch(novelServiceProvider);
-  return ReaderNotifier(novelService);
+  return ReaderNotifier(novelService, ref);
 });
 
 // Reader Settings

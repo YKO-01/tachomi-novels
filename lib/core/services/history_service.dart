@@ -1,291 +1,199 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/novel.dart';
 import '../models/chapter.dart';
+import '../models/novel_history.dart';
 
-class HistoryItem {
-  final String id;
-  final String novelId;
-  final String chapterId;
-  final String novelTitle;
-  final String chapterTitle;
-  final DateTime lastRead;
-  final double progress; // 0.0 to 1.0
-  final bool isCompleted;
-
-  const HistoryItem({
-    required this.id,
-    required this.novelId,
-    required this.chapterId,
-    required this.novelTitle,
-    required this.chapterTitle,
-    required this.lastRead,
-    required this.progress,
-    this.isCompleted = false,
-  });
-
-  HistoryItem copyWith({
-    String? id,
-    String? novelId,
-    String? chapterId,
-    String? novelTitle,
-    String? chapterTitle,
-    DateTime? lastRead,
-    double? progress,
-    bool? isCompleted,
-  }) {
-    return HistoryItem(
-      id: id ?? this.id,
-      novelId: novelId ?? this.novelId,
-      chapterId: chapterId ?? this.chapterId,
-      novelTitle: novelTitle ?? this.novelTitle,
-      chapterTitle: chapterTitle ?? this.chapterTitle,
-      lastRead: lastRead ?? this.lastRead,
-      progress: progress ?? this.progress,
-      isCompleted: isCompleted ?? this.isCompleted,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'novelId': novelId,
-      'chapterId': chapterId,
-      'novelTitle': novelTitle,
-      'chapterTitle': chapterTitle,
-      'lastRead': lastRead.toIso8601String(),
-      'progress': progress,
-      'isCompleted': isCompleted,
-    };
-  }
-
-  factory HistoryItem.fromJson(Map<String, dynamic> json) {
-    return HistoryItem(
-      id: json['id'],
-      novelId: json['novelId'],
-      chapterId: json['chapterId'],
-      novelTitle: json['novelTitle'],
-      chapterTitle: json['chapterTitle'],
-      lastRead: DateTime.parse(json['lastRead']),
-      progress: json['progress'].toDouble(),
-      isCompleted: json['isCompleted'] ?? false,
-    );
-  }
-}
-
+/// HistoryService - Manages reading history data
+/// Uses SharedPreferences for persistence with proper error handling
 class HistoryService {
-  static const String _historyKey = 'reading_history';
-  static List<HistoryItem> _historyItems = [];
+  static const String _kHistoryKey = 'reading_history';
+  static List<NovelHistory> _cachedHistories = [];
   static bool _isInitialized = false;
 
+  // MARK: - Initialization
   static Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
-      print('HistoryService: Initializing...');
-      final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getString(_historyKey);
-      if (historyJson != null) {
-        final List<dynamic> historyList = json.decode(historyJson);
-        _historyItems = historyList.map((json) => HistoryItem.fromJson(json)).toList();
-        print('HistoryService: Loaded ${_historyItems.length} items from SharedPreferences');
-      } else {
-        print('HistoryService: No existing history data found');
+      debugPrint('HistoryService: Initializing...');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final historyJson = prefs.getString(_kHistoryKey);
+        
+        if (historyJson != null) {
+          final List<dynamic> historyList = json.decode(historyJson);
+          _cachedHistories = historyList.map((json) => _fromJson(json)).toList();
+          debugPrint('HistoryService: Loaded ${_cachedHistories.length} histories from cache');
+        } else {
+          debugPrint('HistoryService: No cached data found');
+        }
+        _isInitialized = true;
+      } catch (error) {
+        debugPrint('HistoryService: Error during initialization - $error');
+        _cachedHistories = [];
+        _isInitialized = true;
       }
-      _isInitialized = true;
     }
   }
 
-  static Future<List<HistoryItem>> getHistoryItems() async {
+  // MARK: - Public API
+  static Future<List<NovelHistory>> getAllHistories() async {
     await _ensureInitialized();
-    print('HistoryService: Retrieved ${_historyItems.length} history items');
-    return List.from(_historyItems);
+    debugPrint('HistoryService: Retrieved ${_cachedHistories.length} histories');
+    return List.from(_cachedHistories);
   }
 
-  static Future<void> addToHistory(Novel novel, Chapter chapter, double progress) async {
+  static Future<void> addNovelToHistory(Novel novel, Chapter chapter) async {
     await _ensureInitialized();
     
-    print('HistoryService: Adding to history - Novel: ${novel.title}, Chapter: ${chapter.title}, Progress: $progress');
+    debugPrint('HistoryService: Adding novel to history - ${novel.title} (ID: ${novel.id})');
+    debugPrint('HistoryService: Chapter - ${chapter.title} (ID: ${chapter.id})');
     
-    final existingIndex = _historyItems.indexWhere(
-      (item) => item.novelId == novel.id && item.chapterId == chapter.id
-    );
-    
-    final newItem = HistoryItem(
-      id: '${novel.id}_${chapter.id}',
-      novelId: novel.id,
-      chapterId: chapter.id,
-      novelTitle: novel.title,
-      chapterTitle: chapter.title,
-      lastRead: DateTime.now(),
-      progress: progress,
-      isCompleted: progress >= 1.0,
-    );
-    
-    if (existingIndex >= 0) {
-      _historyItems[existingIndex] = newItem;
-      print('HistoryService: Updated existing history item');
-    } else {
-      _historyItems.insert(0, newItem);
-      print('HistoryService: Added new history item');
-    }
-    
-    // Sort by last read date (most recent first)
-    _historyItems.sort((a, b) => b.lastRead.compareTo(a.lastRead));
-    await _saveToPreferences();
-    print('HistoryService: Total history items after save: ${_historyItems.length}');
-  }
-
-  static Future<void> updateProgress(String novelId, String chapterId, double progress) async {
-    await _ensureInitialized();
-    final index = _historyItems.indexWhere(
-      (item) => item.novelId == novelId && item.chapterId == chapterId
-    );
-    
-    if (index >= 0) {
-      _historyItems[index] = _historyItems[index].copyWith(
-        progress: progress,
-        isCompleted: progress >= 1.0,
-        lastRead: DateTime.now(),
+    try {
+      final existingIndex = _cachedHistories.indexWhere(
+        (history) => history.novelId == novel.id
       );
-      await _saveToPreferences();
+      
+      NovelHistory updatedHistory;
+      if (existingIndex >= 0) {
+        // Update existing history
+        updatedHistory = _cachedHistories[existingIndex].updateLastChapter(chapter);
+        _cachedHistories[existingIndex] = updatedHistory;
+        debugPrint('HistoryService: Updated existing history for ${novel.title}');
+      } else {
+        // Create new history
+        updatedHistory = NovelHistory.fromNovelAndChapter(novel, chapter);
+        _cachedHistories.insert(0, updatedHistory);
+        debugPrint('HistoryService: Created new history for ${novel.title}');
+      }
+      
+      // Sort by last read date (most recent first)
+      _cachedHistories.sort((a, b) => b.lastRead.compareTo(a.lastRead));
+      await _persistData();
+      
+      debugPrint('HistoryService: Total histories after add: ${_cachedHistories.length}');
+      
+    } catch (error) {
+      debugPrint('HistoryService: Error adding novel to history - $error');
+      rethrow;
     }
-  }
-
-  static Future<void> removeFromHistory(String historyId) async {
-    await _ensureInitialized();
-    _historyItems.removeWhere((item) => item.id == historyId);
-    await _saveToPreferences();
   }
 
   static Future<void> removeNovelFromHistory(String novelId) async {
     await _ensureInitialized();
-    _historyItems.removeWhere((item) => item.novelId == novelId);
-    await _saveToPreferences();
+    
+    try {
+      final initialCount = _cachedHistories.length;
+      _cachedHistories.removeWhere((history) => history.novelId == novelId);
+      
+      if (_cachedHistories.length < initialCount) {
+        await _persistData();
+        debugPrint('HistoryService: Removed novel $novelId from history');
+      }
+    } catch (error) {
+      debugPrint('HistoryService: Error removing novel from history - $error');
+      rethrow;
+    }
   }
 
   static Future<void> clearAllHistory() async {
     await _ensureInitialized();
-    _historyItems.clear();
-    await _saveToPreferences();
-  }
-
-  static Future<List<HistoryItem>> getNovelHistory(String novelId) async {
-    await _ensureInitialized();
-    return _historyItems.where((item) => item.novelId == novelId).toList();
-  }
-
-  static Future<HistoryItem?> getLastReadChapter(String novelId) async {
-    final novelHistory = await getNovelHistory(novelId);
-    if (novelHistory.isEmpty) return null;
     
-    // Return the most recently read chapter for this novel
-    return novelHistory.first;
-  }
-
-  static Future<List<HistoryItem>> getRecentHistory({int limit = 10}) async {
-    await _ensureInitialized();
-    return _historyItems.take(limit).toList();
-  }
-
-  static Future<void> markChapterAsRead(String novelId, String chapterId) async {
-    await updateProgress(novelId, chapterId, 1.0);
-  }
-
-  static Future<void> _saveToPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    final historyJson = json.encode(_historyItems.map((item) => item.toJson()).toList());
-    await prefs.setString(_historyKey, historyJson);
-    print('HistoryService: Saved ${_historyItems.length} items to SharedPreferences');
-  }
-}
-
-// Provider for history service
-final historyServiceProvider = Provider<HistoryService>((ref) {
-  return HistoryService();
-});
-
-// Provider to get all history items
-final historyItemsProvider = FutureProvider<List<HistoryItem>>((ref) async {
-  return await HistoryService.getHistoryItems();
-});
-
-// Provider to get recent history
-final recentHistoryProvider = FutureProvider.family<List<HistoryItem>, int>((ref, limit) async {
-  return await HistoryService.getRecentHistory(limit: limit);
-});
-
-// Provider to get novel history
-final novelHistoryProvider = FutureProvider.family<List<HistoryItem>, String>((ref, novelId) async {
-  return await HistoryService.getNovelHistory(novelId);
-});
-
-// Provider to get last read chapter for a novel
-final lastReadChapterProvider = FutureProvider.family<HistoryItem?, String>((ref, novelId) async {
-  return await HistoryService.getLastReadChapter(novelId);
-});
-
-// Notifier for history changes
-class HistoryNotifier extends StateNotifier<AsyncValue<List<HistoryItem>>> {
-  HistoryNotifier() : super(const AsyncValue.loading()) {
-    _loadHistory();
-  }
-
-  Future<void> _loadHistory() async {
     try {
-      final historyItems = await HistoryService.getHistoryItems();
-      state = AsyncValue.data(historyItems);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      _cachedHistories.clear();
+      await _persistData();
+      debugPrint('HistoryService: Cleared all histories');
+    } catch (error) {
+      debugPrint('HistoryService: Error clearing all histories - $error');
+      rethrow;
     }
   }
 
-  Future<void> addToHistory(Novel novel, Chapter chapter, double progress) async {
-    await HistoryService.addToHistory(novel, chapter, progress);
-    await _loadHistory();
+  static Future<NovelHistory?> getNovelHistory(String novelId) async {
+    await _ensureInitialized();
+    
+    try {
+      return _cachedHistories.firstWhere(
+        (history) => history.novelId == novelId,
+        orElse: () => throw StateError('Novel history not found'),
+      );
+    } catch (e) {
+      return null;
+    }
   }
 
-  Future<void> updateProgress(String novelId, String chapterId, double progress) async {
-    await HistoryService.updateProgress(novelId, chapterId, progress);
-    await _loadHistory();
+  // MARK: - Debug Methods
+  static Future<void> debugPrintHistories() async {
+    await _ensureInitialized();
+    debugPrint('HistoryService: Debug - Current histories count: ${_cachedHistories.length}');
+    for (int i = 0; i < _cachedHistories.length; i++) {
+      final history = _cachedHistories[i];
+      debugPrint('HistoryService: Debug - [$i] ${history.novelTitle} - ${history.lastChapterDisplay} - ${history.formattedLastRead}');
+    }
   }
 
-  Future<void> markChapterAsRead(String novelId, String chapterId) async {
-    await HistoryService.markChapterAsRead(novelId, chapterId);
-    await _loadHistory();
+  static Future<int> getHistoryCount() async {
+    await _ensureInitialized();
+    return _cachedHistories.length;
   }
 
-  Future<void> removeFromHistory(String historyId) async {
-    await HistoryService.removeFromHistory(historyId);
-    await _loadHistory();
+  // MARK: - Private Methods
+  static Future<void> _persistData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final historyJson = json.encode(
+        _cachedHistories.map((history) => history.toJson()).toList()
+      );
+      await prefs.setString(_kHistoryKey, historyJson);
+      debugPrint('HistoryService: Persisted ${_cachedHistories.length} histories');
+    } catch (error) {
+      debugPrint('HistoryService: Error persisting data - $error');
+      rethrow;
+    }
   }
 
-  Future<void> removeNovelFromHistory(String novelId) async {
-    await HistoryService.removeNovelFromHistory(novelId);
-    await _loadHistory();
-  }
-
-  Future<void> clearAllHistory() async {
-    await HistoryService.clearAllHistory();
-    await _loadHistory();
-  }
-
-  void sortByRecent() {
-    state.whenData((items) {
-      final sortedItems = List<HistoryItem>.from(items);
-      sortedItems.sort((a, b) => b.lastRead.compareTo(a.lastRead));
-      state = AsyncValue.data(sortedItems);
-    });
-  }
-
-  void sortByNovel() {
-    state.whenData((items) {
-      final sortedItems = List<HistoryItem>.from(items);
-      sortedItems.sort((a, b) => a.novelTitle.compareTo(b.novelTitle));
-      state = AsyncValue.data(sortedItems);
-    });
+  static NovelHistory _fromJson(Map<String, dynamic> json) {
+    return NovelHistory(
+      id: json['id'],
+      novelId: json['novelId'],
+      novelTitle: json['novelTitle'],
+      author: json['author'],
+      coverUrl: json['coverUrl'],
+      lastRead: DateTime.parse(json['lastRead']),
+      lastChapterId: json['lastChapterId'],
+      lastChapterTitle: json['lastChapterTitle'],
+      lastChapterNumber: json['lastChapterNumber'],
+    );
   }
 }
 
-final historyServiceNotifierProvider = StateNotifierProvider<HistoryNotifier, AsyncValue<List<HistoryItem>>>((ref) {
-  return HistoryNotifier();
-});
+// MARK: - JSON Serialization Extension
+extension NovelHistoryJson on NovelHistory {
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'novelId': novelId,
+      'novelTitle': novelTitle,
+      'author': author,
+      'coverUrl': coverUrl,
+      'lastRead': lastRead.toIso8601String(),
+      'lastChapterId': lastChapterId,
+      'lastChapterTitle': lastChapterTitle,
+      'lastChapterNumber': lastChapterNumber,
+    };
+  }
+
+  static NovelHistory fromJson(Map<String, dynamic> json) {
+    return NovelHistory(
+      id: json['id'],
+      novelId: json['novelId'],
+      novelTitle: json['novelTitle'],
+      author: json['author'],
+      coverUrl: json['coverUrl'],
+      lastRead: DateTime.parse(json['lastRead']),
+      lastChapterId: json['lastChapterId'],
+      lastChapterTitle: json['lastChapterTitle'],
+      lastChapterNumber: json['lastChapterNumber'],
+    );
+  }
+}

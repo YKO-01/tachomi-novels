@@ -1,69 +1,115 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
+import '../../../core/models/novel_history.dart';
 import '../../../core/services/history_service.dart';
 
-class HistoryNotifier extends StateNotifier<AsyncValue<List<HistoryItem>>> {
+/// HistoryNotifier - Manages reading history state
+/// Provides reactive state management for the history feature
+class HistoryNotifier extends StateNotifier<AsyncValue<List<NovelHistory>>> {
+  static const String _kDebugTag = 'HistoryNotifier';
+  
   HistoryNotifier() : super(const AsyncValue.loading()) {
-    _loadHistory();
+    _loadHistories();
   }
 
-  Future<void> _loadHistory() async {
-    print('HistoryProvider: Starting to load history...');
+  // MARK: - Data Loading
+  Future<void> _loadHistories() async {
+    debugPrint('$_kDebugTag: Loading histories...');
     state = const AsyncValue.loading();
     
     try {
-      // Load history from the history service
-      await Future.delayed(const Duration(milliseconds: 500));
-      final historyItems = await HistoryService.getHistoryItems();
-      print('HistoryProvider: Loaded ${historyItems.length} history items');
-      state = AsyncValue.data(historyItems);
-    } catch (e, stackTrace) {
-      print('HistoryProvider: Error loading history - $e');
-      state = AsyncValue.error(e, stackTrace);
+      final histories = await HistoryService.getAllHistories();
+      debugPrint('$_kDebugTag: Loaded ${histories.length} histories from service');
+      state = AsyncValue.data(histories);
+      debugPrint('$_kDebugTag: Set state with ${histories.length} histories');
+    } catch (error, stackTrace) {
+      debugPrint('$_kDebugTag: Error loading histories - $error');
+      state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> addToHistory(Novel novel, Chapter chapter, double progress) async {
-    await HistoryService.addToHistory(novel, chapter, progress);
-    await _loadHistory();
+  // MARK: - Public Methods
+  Future<void> addNovelToHistory(Novel novel, Chapter chapter) async {
+    debugPrint('$_kDebugTag: Adding novel to history - ${novel.title}');
+    try {
+      await HistoryService.addNovelToHistory(novel, chapter);
+      debugPrint('$_kDebugTag: Successfully added to service, reloading histories...');
+      await _loadHistories();
+      debugPrint('$_kDebugTag: Histories reloaded');
+    } catch (error) {
+      debugPrint('$_kDebugTag: Error adding novel to history - $error');
+      rethrow;
+    }
   }
 
-  Future<void> removeFromHistory(String id) async {
-    await HistoryService.removeFromHistory(id);
-    await _loadHistory();
+  Future<void> removeNovelFromHistory(String novelId) async {
+    try {
+      await HistoryService.removeNovelFromHistory(novelId);
+      await _loadHistories();
+    } catch (error) {
+      debugPrint('$_kDebugTag: Error removing novel from history - $error');
+      rethrow;
+    }
   }
 
-  Future<void> markAsUnread(String id) async {
-    // Find the item and reset its progress
-    final items = await HistoryService.getHistoryItems();
-    final item = items.firstWhere((item) => item.id == id);
-    await HistoryService.updateProgress(item.novelId, item.chapterId, 0.0);
-    await _loadHistory();
+  Future<void> clearAllHistory() async {
+    try {
+      await HistoryService.clearAllHistory();
+      await _loadHistories();
+    } catch (error) {
+      debugPrint('$_kDebugTag: Error clearing all histories - $error');
+      rethrow;
+    }
   }
 
-  Future<void> clearAll() async {
-    await HistoryService.clearAllHistory();
-    state = const AsyncValue.data([]);
+  Future<void> refreshHistories() async {
+    debugPrint('$_kDebugTag: Manual refresh requested');
+    await _loadHistories();
   }
 
+  // MARK: - Sorting Methods
   void sortByRecent() {
-    state.whenData((items) {
-      final sortedItems = List<HistoryItem>.from(items);
-      sortedItems.sort((a, b) => b.lastRead.compareTo(a.lastRead));
-      state = AsyncValue.data(sortedItems);
+    state.whenData((histories) {
+      final sortedHistories = List<NovelHistory>.from(histories);
+      sortedHistories.sort((a, b) => b.lastRead.compareTo(a.lastRead));
+      state = AsyncValue.data(sortedHistories);
     });
   }
 
-  void sortByNovel() {
-    state.whenData((items) {
-      final sortedItems = List<HistoryItem>.from(items);
-      sortedItems.sort((a, b) => a.novelTitle.compareTo(b.novelTitle));
-      state = AsyncValue.data(sortedItems);
+  void sortByTitle() {
+    state.whenData((histories) {
+      final sortedHistories = List<NovelHistory>.from(histories);
+      sortedHistories.sort((a, b) => a.novelTitle.compareTo(b.novelTitle));
+      state = AsyncValue.data(sortedHistories);
+    });
+  }
+
+  void sortByAuthor() {
+    state.whenData((histories) {
+      final sortedHistories = List<NovelHistory>.from(histories);
+      sortedHistories.sort((a, b) => a.author.compareTo(b.author));
+      state = AsyncValue.data(sortedHistories);
     });
   }
 }
 
-final historyProvider = StateNotifierProvider<HistoryNotifier, AsyncValue<List<HistoryItem>>>((ref) {
+// MARK: - Provider Registration
+final historyProvider = StateNotifierProvider<HistoryNotifier, AsyncValue<List<NovelHistory>>>((ref) {
   return HistoryNotifier();
+});
+
+// MARK: - Additional Providers
+final novelHistoryProvider = FutureProvider.family<NovelHistory?, String>((ref, novelId) async {
+  return await HistoryService.getNovelHistory(novelId);
+});
+
+final historyCountProvider = Provider<int>((ref) {
+  final historyState = ref.watch(historyProvider);
+  return historyState.when(
+    data: (histories) => histories.length,
+    loading: () => 0,
+    error: (_, __) => 0,
+  );
 });

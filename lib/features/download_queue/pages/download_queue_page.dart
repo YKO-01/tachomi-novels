@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/models/novel.dart';
-import '../../../core/models/chapter.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/download_queue_provider.dart';
 

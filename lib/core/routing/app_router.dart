@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/library/pages/library_page.dart';
 import '../../features/browse/pages/browse_page.dart';
 import '../../features/favorites/pages/favorites_page.dart';
+import '../../features/history/pages/history_page.dart';
 import '../../features/novel_details/pages/novel_details_page.dart';
 import '../../features/more/pages/more_page.dart';
 import '../../features/reader/pages/reader_page.dart';
@@ -159,19 +160,6 @@ class UpdatesPage extends StatelessWidget {
     return const Scaffold(
       body: Center(
         child: Text('Updates Page'),
-      ),
-    );
-  }
-}
-
-class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('History Page'),
       ),
     );
   }

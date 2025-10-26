@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../core/services/library_service.dart';
-import '../../../core/services/history_service.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/novel_details_provider.dart';
 
@@ -86,58 +85,14 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
     );
   }
 
-  Future<bool> _isChapterRead(String novelId, String chapterId) async {
-    try {
-      final historyItems = await HistoryService.getHistoryItems();
-      return historyItems.any((item) => 
-        item.novelId == novelId && 
-        item.chapterId == chapterId && 
-        item.progress > 0.1 // Consider read if progress is more than 10%
-      );
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<double> _getChapterProgress(String novelId, String chapterId) async {
-    try {
-      final historyItems = await HistoryService.getHistoryItems();
-      final item = historyItems.where(
-        (item) => item.novelId == novelId && item.chapterId == chapterId,
-      ).firstOrNull;
-      return item?.progress ?? 0.0;
-    } catch (e) {
-      return 0.0;
-    }
-  }
 
   Future<Map<String, dynamic>> _getChapterStatus(String novelId, String chapterId) async {
-    try {
-      final historyItems = await HistoryService.getHistoryItems();
-      final item = historyItems.where(
-        (item) => item.novelId == novelId && item.chapterId == chapterId,
-      ).firstOrNull;
-      
-      if (item != null) {
-        return {
-          'isRead': item.progress > 0.1,
-          'progress': item.progress,
-          'isCompleted': item.isCompleted,
-        };
-      }
-      
-      return {
-        'isRead': false,
-        'progress': 0.0,
-        'isCompleted': false,
-      };
-    } catch (e) {
-      return {
-        'isRead': false,
-        'progress': 0.0,
-        'isCompleted': false,
-      };
-    }
+    // History feature removed - always return unread status
+    return {
+      'isRead': false,
+      'progress': 0.0,
+      'isCompleted': false,
+    };
   }
 
   Widget _buildNovelDetails(Novel novel, List<Chapter> chapters) {

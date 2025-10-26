@@ -42,7 +42,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Browse'),
+        title: const Text('Updates'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -212,18 +212,28 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           children: [
             Consumer(
               builder: (context, ref, child) {
-                final isInLibrary = ref.watch(isNovelInLibraryProvider(novel.id));
-                return ListTile(
-                  leading: Icon(isInLibrary ? Icons.remove_circle : Icons.library_add),
-                  title: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    if (isInLibrary) {
-                      _removeFromLibrary(novel);
-                    } else {
-                      _addToLibrary(novel);
-                    }
-                  },
+                final isInLibraryAsync = ref.watch(isNovelInLibraryProvider(novel.id));
+                return isInLibraryAsync.when(
+                  data: (isInLibrary) => ListTile(
+                    leading: Icon(isInLibrary ? Icons.remove_circle : Icons.library_add),
+                    title: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (isInLibrary) {
+                        _removeFromLibrary(novel);
+                      } else {
+                        _addToLibrary(novel);
+                      }
+                    },
+                  ),
+                  loading: () => ListTile(
+                    leading: const CircularProgressIndicator(),
+                    title: const Text('Loading...'),
+                  ),
+                  error: (error, stack) => ListTile(
+                    leading: const Icon(Icons.error),
+                    title: const Text('Error'),
+                  ),
                 );
               },
             ),

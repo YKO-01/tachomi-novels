@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../core/services/library_service.dart';
+import '../../../core/services/history_service.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/novel_details_provider.dart';
 
@@ -83,6 +84,60 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
         ),
       ),
     );
+  }
+
+  Future<bool> _isChapterRead(String novelId, String chapterId) async {
+    try {
+      final historyItems = await HistoryService.getHistoryItems();
+      return historyItems.any((item) => 
+        item.novelId == novelId && 
+        item.chapterId == chapterId && 
+        item.progress > 0.1 // Consider read if progress is more than 10%
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<double> _getChapterProgress(String novelId, String chapterId) async {
+    try {
+      final historyItems = await HistoryService.getHistoryItems();
+      final item = historyItems.where(
+        (item) => item.novelId == novelId && item.chapterId == chapterId,
+      ).firstOrNull;
+      return item?.progress ?? 0.0;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  Future<Map<String, dynamic>> _getChapterStatus(String novelId, String chapterId) async {
+    try {
+      final historyItems = await HistoryService.getHistoryItems();
+      final item = historyItems.where(
+        (item) => item.novelId == novelId && item.chapterId == chapterId,
+      ).firstOrNull;
+      
+      if (item != null) {
+        return {
+          'isRead': item.progress > 0.1,
+          'progress': item.progress,
+          'isCompleted': item.isCompleted,
+        };
+      }
+      
+      return {
+        'isRead': false,
+        'progress': 0.0,
+        'isCompleted': false,
+      };
+    } catch (e) {
+      return {
+        'isRead': false,
+        'progress': 0.0,
+        'isCompleted': false,
+      };
+    }
   }
 
   Widget _buildNovelDetails(Novel novel, List<Chapter> chapters) {
@@ -203,22 +258,37 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                     Expanded(
                       child: Consumer(
                         builder: (context, ref, child) {
-                          final isInLibrary = ref.watch(isNovelInLibraryProvider(novel.id));
-                          return ElevatedButton.icon(
-                            onPressed: () {
-                              LibraryService.toggleLibrary(novel.id);
-                              // Invalidate the provider to refresh the UI
-                              ref.invalidate(isNovelInLibraryProvider(novel.id));
-                            },
-                            icon: Icon(isInLibrary ? Icons.remove : Icons.add),
-                            label: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isInLibrary 
-                                ? Theme.of(context).colorScheme.error 
-                                : Theme.of(context).colorScheme.primary,
-                              foregroundColor: isInLibrary 
-                                ? Theme.of(context).colorScheme.onError 
-                                : Theme.of(context).colorScheme.onPrimary,
+                          final isInLibraryAsync = ref.watch(isNovelInLibraryProvider(novel.id));
+                          return isInLibraryAsync.when(
+                            data: (isInLibrary) => ElevatedButton.icon(
+                              onPressed: () async {
+                                await LibraryService.toggleLibrary(novel.id);
+                                // Invalidate the provider to refresh the UI
+                                ref.invalidate(isNovelInLibraryProvider(novel.id));
+                              },
+                              icon: Icon(isInLibrary ? Icons.remove : Icons.add),
+                              label: Text(isInLibrary ? 'Remove from Library' : 'Add to Library'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isInLibrary 
+                                  ? Theme.of(context).colorScheme.error 
+                                  : Theme.of(context).colorScheme.primary,
+                                foregroundColor: isInLibrary 
+                                  ? Theme.of(context).colorScheme.onError 
+                                  : Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            loading: () => ElevatedButton.icon(
+                              onPressed: null,
+                              icon: const CircularProgressIndicator(),
+                              label: const Text('Loading...'),
+                            ),
+                            error: (error, stack) => ElevatedButton.icon(
+                              onPressed: () async {
+                                await LibraryService.toggleLibrary(novel.id);
+                                ref.invalidate(isNovelInLibraryProvider(novel.id));
+                              },
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add to Library'),
                             ),
                           );
                         },
@@ -256,22 +326,70 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final chapter = chapters[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  child: Text(
-                    chapter.chapterNumber.toString(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _getChapterStatus(novel.id, chapter.id),
+                builder: (context, snapshot) {
+                  final isRead = snapshot.data?['isRead'] ?? false;
+                  final progress = snapshot.data?['progress'] ?? 0.0;
+                  
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: isRead 
+                          ? Colors.green.withOpacity(0.1)
+                          : Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      child: isRead 
+                          ? Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 20,
+                            )
+                          : Text(
+                              chapter.chapterNumber.toString(),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                  ),
-                ),
-                title: Text(chapter.title),
-                subtitle: Text(
-                  'Updated ${_getTimeAgo(chapter.publishedAt)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                    title: Text(
+                      chapter.title,
+                      style: TextStyle(
+                        fontWeight: isRead ? FontWeight.w500 : FontWeight.normal,
+                        color: isRead 
+                            ? Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Updated ${_getTimeAgo(chapter.publishedAt)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (isRead && progress > 0) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.book,
+                                size: 12,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                progress >= 1.0 ? 'Completed' : '${(progress * 100).toInt()}% read',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -296,9 +414,11 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                     ),
                   ],
                 ),
-                onTap: () {
-                  // Navigate to reader
-                  context.push('/reader/${novel.id}/${chapter.id}');
+                    onTap: () {
+                      // Navigate to reader
+                      context.push('/reader/${novel.id}/${chapter.id}');
+                    },
+                  );
                 },
               );
             },

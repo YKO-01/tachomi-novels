@@ -28,7 +28,34 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(readerProvider.notifier).loadChapter(widget.novelId, widget.chapterId);
+      // Automatically add to history when starting to read
+      _addToHistory();
     });
+    
+    // Add scroll listener to track reading progress
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      
+      if (maxScroll > 0) {
+        final progress = (currentScroll / maxScroll).clamp(0.0, 1.0);
+        ref.read(readerProvider.notifier).updateReadingProgress(progress);
+        
+        // Mark as completed when reaching the end
+        if (progress >= 0.95) {
+          ref.read(readerProvider.notifier).markChapterAsCompleted();
+        }
+      }
+    }
+  }
+
+  Future<void> _addToHistory() async {
+    // Add to history with initial progress (0%)
+    await ref.read(readerProvider.notifier).trackReadingProgress(0.0);
   }
 
   @override

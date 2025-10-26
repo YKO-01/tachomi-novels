@@ -6,7 +6,7 @@ import '../../../shared/constants/app_constants.dart';
 
 final libraryProvider = FutureProvider<List<Novel>>((ref) async {
   final novelService = ref.watch(novelServiceProvider);
-  final libraryNovelIds = LibraryService.getLibraryNovelIds();
+  final libraryNovelIds = await LibraryService.getLibraryNovelIds();
   
   final allNovels = await novelService.getNovels();
   // Filter to only show novels that are in the library
@@ -37,16 +37,16 @@ class LibraryNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
     }
   }
 
-  void filterNovels(String filter) {
+  Future<void> filterNovels(String filter) async {
     _currentFilter = filter;
-    _applyCurrentFilter();
+    await _applyCurrentFilter();
   }
 
-  void _applyCurrentFilter() {
+  Future<void> _applyCurrentFilter() async {
     if (_allNovels.isEmpty) return;
     
     // Get library novel IDs from the shared service
-    final libraryNovelIds = LibraryService.getLibraryNovelIds();
+    final libraryNovelIds = await LibraryService.getLibraryNovelIds();
     
     // First filter to only show novels that are in the library
     List<Novel> libraryNovels = _allNovels.where((novel) => libraryNovelIds.contains(novel.id)).toList();
@@ -104,13 +104,13 @@ class LibraryNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
     });
   }
 
-  void addToLibrary(String novelId) {
-    LibraryService.addToLibrary(novelId);
-    _applyCurrentFilter(); // Refresh the library view
+  Future<void> addToLibrary(String novelId) async {
+    await LibraryService.addToLibrary(novelId);
+    await _applyCurrentFilter(); // Refresh the library view
   }
 
-  void removeFromLibrary(String novelId) {
-    LibraryService.removeFromLibrary(novelId);
-    _applyCurrentFilter(); // Refresh the library view
+  Future<void> removeFromLibrary(String novelId) async {
+    await LibraryService.removeFromLibrary(novelId);
+    await _applyCurrentFilter(); // Refresh the library view
   }
 }

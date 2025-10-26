@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/services/novel_service.dart';
 import '../../../core/services/library_service.dart';
+import '../../../core/services/favorites_service.dart';
 import '../../../shared/constants/app_constants.dart';
 
 final browseProvider = FutureProvider<List<Novel>>((ref) async {
@@ -107,7 +108,10 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
     });
   }
 
-  void toggleFavorite(String novelId) {
+  Future<void> toggleFavorite(String novelId) async {
+    // Use the favorites service to toggle
+    await FavoritesService.toggleFavorite(novelId);
+    
     state.whenData((novels) {
       final updatedNovels = novels.map((novel) {
         if (novel.id == novelId) {
@@ -119,16 +123,16 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
     });
   }
 
-  void addToLibrary(Novel novel) {
+  Future<void> addToLibrary(Novel novel) async {
     // Use the shared library service
-    LibraryService.addToLibrary(novel.id);
+    await LibraryService.addToLibrary(novel.id);
     // Refresh the browse state to update UI
     _applyCurrentFilter();
   }
 
-  void removeFromLibrary(Novel novel) {
+  Future<void> removeFromLibrary(Novel novel) async {
     // Use the shared library service
-    LibraryService.removeFromLibrary(novel.id);
+    await LibraryService.removeFromLibrary(novel.id);
     // Refresh the browse state to update UI
     _applyCurrentFilter();
   }

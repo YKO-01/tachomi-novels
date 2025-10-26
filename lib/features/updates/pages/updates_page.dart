@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/models/novel.dart';
-import '../../../core/models/chapter.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/updates_provider.dart';
 

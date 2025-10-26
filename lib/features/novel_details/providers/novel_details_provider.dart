@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/services/novel_service.dart';
+import '../../../core/services/favorites_service.dart';
 
 final novelDetailsProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, novelId) async {
   final novelService = ref.watch(novelServiceProvider);
@@ -51,9 +52,12 @@ class NovelDetailsNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>
     }
   }
 
-  void toggleFavorite() {
-    state.whenData((data) {
+  Future<void> toggleFavorite() async {
+    state.whenData((data) async {
       final novel = data['novel'] as Novel;
+      // Use the favorites service to toggle
+      await FavoritesService.toggleFavorite(novel.id);
+      
       final updatedNovel = novel.copyWith(
         isFavorite: !novel.isFavorite,
       );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/library/pages/library_page.dart';
 import '../../features/browse/pages/browse_page.dart';
+import '../../features/favorites/pages/favorites_page.dart';
 import '../../features/novel_details/pages/novel_details_page.dart';
 import '../../features/more/pages/more_page.dart';
 import '../../features/reader/pages/reader_page.dart';
@@ -26,7 +27,7 @@ class AppRouter {
           GoRoute(
             path: AppConstants.routeUpdates,
             name: 'updates',
-            builder: (context, state) => const UpdatesPage(),
+            builder: (context, state) => const BrowsePage(),
           ),
           GoRoute(
             path: AppConstants.routeHistory,
@@ -35,8 +36,8 @@ class AppRouter {
           ),
           GoRoute(
             path: AppConstants.routeBrowse,
-            name: 'browse',
-            builder: (context, state) => const BrowsePage(),
+            name: 'favorites',
+            builder: (context, state) => const FavoritesPage(),
           ),
           GoRoute(
             path: AppConstants.routeMore,
@@ -137,7 +138,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.explore),
-            label: 'Browse',
+            label: 'Favorites',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz),

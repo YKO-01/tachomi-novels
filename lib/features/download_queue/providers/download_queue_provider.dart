@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/download_service.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 
@@ -138,6 +139,10 @@ class DownloadQueueNotifier extends StateNotifier<List<DownloadItem>> {
       // Download completed
       state = state.map((item) {
         if (item.id == id) {
+          // Persist downloaded chapter for offline reading
+          DownloadService.saveChapter(
+            item.chapter.copyWith(isDownloaded: true),
+          );
           return item.copyWith(
             status: DownloadStatus.completed,
             progress: 1.0,

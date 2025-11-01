@@ -1,15 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/settings_provider.dart';
 
-class MorePage extends ConsumerWidget {
+class MorePage extends ConsumerStatefulWidget {
   const MorePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MorePage> createState() => _MorePageState();
+}
+
+class _MorePageState extends ConsumerState<MorePage> {
+  final List<String> _fontFamilies = [
+    'SF Pro Display',
+    'Roboto',
+    'Open Sans',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Inter',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
@@ -20,21 +34,79 @@ class MorePage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingM),
         children: [
-          // Settings Section
+          // Appearance Section
           _buildSection(
             context,
-            'Settings',
+            'Appearance',
             [
               _buildSwitchTile(
                 context,
-                'Downloaded Only',
-                'Show only downloaded novels',
-                Icons.download,
-                settings.downloadedOnly,
+                'Dark Mode',
+                'Switch between light and dark theme',
+                settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                settings.isDarkMode,
                 (value) {
-                  ref.read(settingsProvider.notifier).updateDownloadedOnly(value);
+                  ref.read(settingsProvider.notifier).updateDarkMode(value);
                 },
               ),
+            ],
+          ),
+          
+          const SizedBox(height: AppConstants.spacingL),
+          
+          // Reading Settings Section
+          _buildSection(
+            context,
+            'Reading Settings',
+            [
+              // Font Size
+              _buildSliderTile(
+                context,
+                'Font Size',
+                'Adjust text size for comfortable reading',
+                Icons.format_size,
+                settings.fontSize,
+                12.0,
+                24.0,
+                (value) {
+                  ref.read(settingsProvider.notifier).updateFontSize(value);
+                },
+              ),
+              
+              // Font Family
+              _buildListTile(
+                context,
+                'Font Family',
+                settings.fontFamily,
+                Icons.font_download,
+                () {
+                  _showFontFamilyDialog(context, ref, settings.fontFamily);
+                },
+              ),
+              
+              // Line Height
+              _buildSliderTile(
+                context,
+                'Line Height',
+                'Adjust spacing between lines',
+                Icons.format_line_spacing,
+                settings.lineHeight,
+                1.0,
+                2.5,
+                (value) {
+                  ref.read(settingsProvider.notifier).updateLineHeight(value);
+                },
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: AppConstants.spacingL),
+          
+          // Privacy Section
+          _buildSection(
+            context,
+            'Privacy',
+            [
               _buildSwitchTile(
                 context,
                 'Incognito Mode',
@@ -43,63 +115,6 @@ class MorePage extends ConsumerWidget {
                 settings.incognitoMode,
                 (value) {
                   ref.read(settingsProvider.notifier).updateIncognitoMode(value);
-                },
-              ),
-              _buildSwitchTile(
-                context,
-                'Auto Download',
-                'Automatically download new chapters',
-                Icons.cloud_download,
-                settings.autoDownload,
-                (value) {
-                  ref.read(settingsProvider.notifier).updateAutoDownload(value);
-                },
-              ),
-              _buildSwitchTile(
-                context,
-                'WiFi Only Download',
-                'Download only when connected to WiFi',
-                Icons.wifi,
-                settings.wifiOnlyDownload,
-                (value) {
-                  ref.read(settingsProvider.notifier).updateWifiOnlyDownload(value);
-                },
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: AppConstants.spacingL),
-          
-          // Library Management Section
-          _buildSection(
-            context,
-            'Library Management',
-            [
-              _buildListTile(
-                context,
-                'Download Queue',
-                'Manage your downloads',
-                Icons.download,
-                () {
-                  context.push('/download-queue');
-                },
-              ),
-              _buildListTile(
-                context,
-                'Categories',
-                'Organize your library',
-                Icons.category,
-                () {
-                  _showCategories(context);
-                },
-              ),
-              _buildListTile(
-                context,
-                'Statistics',
-                'View your reading stats',
-                Icons.analytics,
-                () {
-                  _showStatistics(context);
                 },
               ),
             ],
@@ -230,64 +245,90 @@ class MorePage extends ConsumerWidget {
     );
   }
 
-  void _showDownloadQueue(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Download Queue'),
-        content: const Text('No downloads in queue'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+  Widget _buildSliderTile(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    double value,
+    double min,
+    double max,
+    ValueChanged<double> onChanged,
+  ) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(subtitle),
+          const SizedBox(height: AppConstants.spacingXS),
+          Row(
+            children: [
+              Expanded(
+                child: Slider(
+                  value: value,
+                  min: min,
+                  max: max,
+                  divisions: ((max - min) * 10).toInt(),
+                  label: value.toStringAsFixed(1),
+                  onChanged: onChanged,
+                ),
+              ),
+              SizedBox(
+                width: 50,
+                child: Text(
+                  value.toStringAsFixed(1),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _showCategories(BuildContext context) {
+  void _showFontFamilyDialog(BuildContext context, WidgetRef ref, String currentFont) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Categories'),
-        content: const Text('Category management coming soon'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+        title: const Text('Select Font Family'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _fontFamilies.length,
+            itemBuilder: (context, index) {
+              final fontFamily = _fontFamilies[index];
+              final isSelected = fontFamily == currentFont;
+              
+              return ListTile(
+                title: Text(
+                  fontFamily,
+                  style: TextStyle(
+                    fontFamily: fontFamily,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                trailing: isSelected
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  ref.read(settingsProvider.notifier).updateFontFamily(fontFamily);
+                  Navigator.pop(context);
+                },
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showStatistics(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reading Statistics'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              title: Text('Total Novels'),
-              trailing: Text('0'),
-            ),
-            const ListTile(
-              title: Text('Chapters Read'),
-              trailing: Text('0'),
-            ),
-            const ListTile(
-              title: Text('Reading Time'),
-              trailing: Text('0 hours'),
-            ),
-          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -314,21 +355,37 @@ class MorePage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Cache'),
-        content: const Text('This will clear all cached images and data. Continue?'),
+        title: const Text('Clear Cache & Reset Settings'),
+        content: const Text('This will clear all cached images, data, and reset all settings to defaults. This action cannot be undone. Continue?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cache cleared')),
-              );
+              
+              // Reset settings to defaults
+              await ref.read(settingsProvider.notifier).resetSettings();
+              
+              // Clear cache (you can add more cache clearing logic here)
+              // For example: image cache, downloaded chapters, etc.
+              
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cache cleared and settings reset to defaults'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
             },
-            child: const Text('Clear'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Clear All'),
           ),
         ],
       ),

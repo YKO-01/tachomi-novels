@@ -25,7 +25,7 @@ class HistoryPage extends ConsumerWidget {
   // MARK: - App Bar
   PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref, ThemeData theme) {
     return AppBar(
-      title: const Text('Reading History'),
+      title: const Text('History'),
       centerTitle: true,
       actions: [
         if (ref.watch(historyCountProvider) > 0) ...[

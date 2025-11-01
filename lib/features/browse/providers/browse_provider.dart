@@ -23,13 +23,18 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
   BrowseNotifier(this._novelService) : super(const AsyncValue.loading());
 
   Future<void> loadNovels() async {
+    print('BrowseNotifier: Starting to load novels...');
     state = const AsyncValue.loading();
     
     try {
+      print('BrowseNotifier: Calling novelService.getNovels()...');
       final novels = await _novelService.getNovels();
+      print('BrowseNotifier: Received ${novels.length} novels from service');
       _allNovels = novels;
       _applyCurrentFilter();
+      print('BrowseNotifier: Applied filter, final state has ${_allNovels.length} novels');
     } catch (e, stackTrace) {
+      print('BrowseNotifier: Error loading novels - $e');
       state = AsyncValue.error(e, stackTrace);
     }
   }
@@ -40,7 +45,11 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
   }
 
   void _applyCurrentFilter() {
-    if (_allNovels.isEmpty) return;
+    print('BrowseNotifier: _applyCurrentFilter called with filter: $_currentFilter');
+    if (_allNovels.isEmpty) {
+      print('BrowseNotifier: _allNovels is empty, returning');
+      return;
+    }
     
     List<Novel> filteredNovels = _allNovels;
     
@@ -65,7 +74,9 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
         break;
     }
     
+    print('BrowseNotifier: Filtered novels count: ${filteredNovels.length}');
     state = AsyncValue.data(filteredNovels);
+    print('BrowseNotifier: State updated with ${filteredNovels.length} novels');
   }
 
   void sortNovels(String sortBy) {

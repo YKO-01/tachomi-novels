@@ -9,7 +9,6 @@ class DownloadQueuePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final downloadQueue = ref.watch(downloadQueueProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -98,6 +97,9 @@ class DownloadQueuePage extends ConsumerWidget {
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             switch (value) {
+              case 'open':
+                Navigator.of(context).pushNamed('/reader/${item.novel.id}/${item.chapter.id}');
+                break;
               case 'pause':
                 ref.read(downloadQueueProvider.notifier).pauseDownload(item.id);
                 break;
@@ -113,6 +115,15 @@ class DownloadQueuePage extends ConsumerWidget {
             }
           },
           itemBuilder: (context) => [
+            if (item.status == DownloadStatus.completed)
+              const PopupMenuItem(
+                value: 'open',
+                child: ListTile(
+                  leading: Icon(Icons.play_arrow),
+                  title: Text('Open in Reader'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             if (item.status == DownloadStatus.downloading)
               const PopupMenuItem(
                 value: 'pause',
@@ -150,6 +161,10 @@ class DownloadQueuePage extends ConsumerWidget {
             ),
           ],
         ),
+        onTap: () {
+          // Allow opening even before completion; the reader will use offline content if present
+          Navigator.of(context).pushNamed('/reader/${item.novel.id}/${item.chapter.id}');
+        },
       ),
     );
   }

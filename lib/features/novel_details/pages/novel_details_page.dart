@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../core/services/library_service.dart';
+import '../../../core/services/download_service.dart';
+import '../../download_queue/providers/download_queue_provider.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/novel_details_provider.dart';
 
@@ -88,10 +90,12 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
 
   Future<Map<String, dynamic>> _getChapterStatus(String novelId, String chapterId) async {
     // History feature removed - always return unread status
+    final isDownloaded = await DownloadService.isDownloaded(chapterId);
     return {
       'isRead': false,
       'progress': 0.0,
       'isCompleted': false,
+      'isDownloaded': isDownloaded,
     };
   }
 
@@ -348,7 +352,7 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (chapter.isDownloaded)
+                    if (snapshot.data?['isDownloaded'] == true || chapter.isDownloaded)
                       Icon(
                         Icons.download_done,
                         color: Theme.of(context).colorScheme.primary,
@@ -358,7 +362,11 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                       IconButton(
                         icon: const Icon(Icons.download),
                         onPressed: () {
-                          // Download chapter
+                          // Add chapter to download queue
+                          ref.read(downloadQueueProvider.notifier).addDownload(novel, chapter);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Added to download queue')),
+                          );
                         },
                       ),
                     IconButton(
@@ -417,7 +425,22 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
               title: Text(chapter.isDownloaded ? 'Remove Download' : 'Download Chapter'),
               onTap: () {
                 Navigator.pop(context);
-                // Toggle download
+                if (chapter.isDownloaded) {
+                  DownloadService.removeChapter(chapter.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Removed downloaded chapter')),
+                  );
+                } else {
+                  // Queue for download
+                  final novelDetailsState = ref.read(novelDetailsNotifierProvider(widget.novelId));
+                  novelDetailsState.whenData((data) {
+                    final novel = data['novel'] as Novel;
+                    ref.read(downloadQueueProvider.notifier).addDownload(novel, chapter);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Added to download queue')),
+                    );
+                  });
+                }
               },
             ),
             ListTile(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/updates_provider.dart';
+import '../../download_queue/providers/download_queue_provider.dart';
 
 class UpdatesPage extends ConsumerWidget {
   const UpdatesPage({super.key});
@@ -10,6 +11,7 @@ class UpdatesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final updatesState = ref.watch(updatesProvider);
+    final networkState = ref.watch(networkStatusProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -24,30 +26,39 @@ class UpdatesPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: updatesState.when(
-        data: (updates) => updates.isEmpty
-            ? _buildEmptyState(context)
-            : _buildUpdatesList(context, ref, updates),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-              const SizedBox(height: AppConstants.spacingM),
-              Text('Failed to load updates', style: theme.textTheme.headlineSmall),
-              const SizedBox(height: AppConstants.spacingS),
-              Text(error.toString(), style: theme.textTheme.bodyMedium),
-              const SizedBox(height: AppConstants.spacingM),
-              ElevatedButton(
-                onPressed: () {
-                  ref.invalidate(updatesProvider);
-                },
-                child: const Text('Retry'),
+      body: networkState.when(
+        data: (isOnline) {
+          if (!isOnline) {
+            return _buildOfflineState(context);
+          }
+          return updatesState.when(
+            data: (updates) => updates.isEmpty
+                ? _buildEmptyState(context)
+                : _buildUpdatesList(context, ref, updates),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+                  const SizedBox(height: AppConstants.spacingM),
+                  Text('Failed to load updates', style: theme.textTheme.headlineSmall),
+                  const SizedBox(height: AppConstants.spacingS),
+                  Text(error.toString(), style: theme.textTheme.bodyMedium),
+                  const SizedBox(height: AppConstants.spacingM),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.invalidate(updatesProvider);
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => _buildOfflineState(context),
       ),
     );
   }
@@ -74,6 +85,36 @@ class UpdatesPage extends ConsumerWidget {
           const SizedBox(height: AppConstants.spacingS),
           Text(
             'No new chapters available',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineState(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.wifi_off,
+            size: 64,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+          const SizedBox(height: AppConstants.spacingM),
+          Text(
+            'No Connection',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingS),
+          Text(
+            'Connect to the internet to see updates',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
@@ -146,6 +187,8 @@ class UpdatesPage extends ConsumerWidget {
                 _readChapter(context, update);
                 break;
               case 'download':
+                // Add to download queue and mark as downloaded in updates list
+                ref.read(downloadQueueProvider.notifier).addDownload(update.novel, update.chapter);
                 ref.read(updatesProvider.notifier).downloadChapter(update.novel, update.chapter);
                 break;
               case 'mark_read':

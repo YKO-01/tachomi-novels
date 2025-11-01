@@ -2,8 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
+import '../../../core/models/user_settings.dart';
 import '../../../core/services/novel_service.dart';
+import '../../../core/services/download_service.dart';
+import '../../../core/services/network_service.dart';
 import '../../history/providers/history_provider.dart';
+import '../../more/providers/settings_provider.dart';
 
 class ReaderState {
   final Novel? novel;
@@ -61,10 +65,25 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     try {
       final novel = await _novelService.getNovelById(novelId);
       final chapters = await _novelService.getChaptersByNovelId(novelId);
-      final chapter = chapters.firstWhere(
+      // Prefer downloaded chapter content when available
+      Chapter chapter = chapters.firstWhere(
         (c) => c.id == chapterId,
         orElse: () => chapters.first,
       );
+      final downloaded = await DownloadService.getDownloadedChapter(chapter.id);
+      if (downloaded != null) {
+        chapter = downloaded;
+      } else {
+        // If offline and not downloaded, block reading
+        final online = await NetworkService.isOnline();
+        if (!online) {
+          state = state.copyWith(
+            isLoading: false,
+            error: 'No internet connection. This chapter is not downloaded.',
+          );
+          return;
+        }
+      }
       
       if (novel == null) {
         state = state.copyWith(
@@ -155,53 +174,92 @@ final readerProvider = StateNotifierProvider<ReaderNotifier, ReaderState>((ref) 
 class ReaderSettings {
   final double fontSize;
   final double lineHeight;
+  final String fontFamily;
   final ReaderTheme theme;
 
   const ReaderSettings({
     this.fontSize = 16.0,
     this.lineHeight = 1.5,
+    this.fontFamily = 'SF Pro Display',
     this.theme = ReaderTheme.light,
   });
 
   ReaderSettings copyWith({
     double? fontSize,
     double? lineHeight,
+    String? fontFamily,
     ReaderTheme? theme,
   }) {
     return ReaderSettings(
       fontSize: fontSize ?? this.fontSize,
       lineHeight: lineHeight ?? this.lineHeight,
+      fontFamily: fontFamily ?? this.fontFamily,
       theme: theme ?? this.theme,
     );
   }
 }
 
 class ReaderSettingsNotifier extends StateNotifier<ReaderSettings> {
-  ReaderSettingsNotifier() : super(const ReaderSettings());
+  final Ref _ref;
+  
+  ReaderSettingsNotifier(this._ref) : super(const ReaderSettings()) {
+    // Initialize from user settings
+    _syncWithUserSettings();
+    
+    // Listen to user settings changes and sync
+    _ref.listen<UserSettings>(settingsProvider, (previous, next) {
+      if (previous != next) {
+        _syncWithUserSettings();
+      }
+    });
+  }
+
+  void _syncWithUserSettings() {
+    final userSettings = _ref.read(settingsProvider);
+    state = ReaderSettings(
+      fontSize: userSettings.fontSize,
+      lineHeight: userSettings.lineHeight,
+      fontFamily: userSettings.fontFamily,
+      theme: state.theme, // Keep current theme as it's reader-specific
+    );
+  }
 
   void updateFontSize(double fontSize) {
     state = state.copyWith(fontSize: fontSize);
+    // Sync back to user settings
+    _ref.read(settingsProvider.notifier).updateFontSize(fontSize);
   }
 
   void increaseFontSize() {
-    state = state.copyWith(fontSize: (state.fontSize + 1).clamp(12.0, 24.0));
+    final newSize = (state.fontSize + 1).clamp(12.0, 24.0);
+    updateFontSize(newSize);
   }
 
   void decreaseFontSize() {
-    state = state.copyWith(fontSize: (state.fontSize - 1).clamp(12.0, 24.0));
+    final newSize = (state.fontSize - 1).clamp(12.0, 24.0);
+    updateFontSize(newSize);
   }
 
   void updateLineHeight(double lineHeight) {
     state = state.copyWith(lineHeight: lineHeight);
+    // Sync back to user settings
+    _ref.read(settingsProvider.notifier).updateLineHeight(lineHeight);
+  }
+
+  void updateFontFamily(String fontFamily) {
+    state = state.copyWith(fontFamily: fontFamily);
+    // Sync back to user settings
+    _ref.read(settingsProvider.notifier).updateFontFamily(fontFamily);
   }
 
   void updateTheme(ReaderTheme theme) {
     state = state.copyWith(theme: theme);
+    // Theme is reader-specific, don't sync to user settings
   }
 }
 
 final readerSettingsProvider = StateNotifierProvider<ReaderSettingsNotifier, ReaderSettings>((ref) {
-  return ReaderSettingsNotifier();
+  return ReaderSettingsNotifier(ref);
 });
 
 enum ReaderTheme { light, dark, sepia }

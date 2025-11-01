@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/network_service.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 
@@ -37,12 +38,18 @@ class UpdateItem {
 }
 
 class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
-  UpdatesNotifier() : super(const AsyncValue.loading()) {
+  UpdatesNotifier(this._isOnline) : super(const AsyncValue.loading()) {
     _loadUpdates();
   }
 
+  final bool _isOnline;
+
   Future<void> _loadUpdates() async {
     state = const AsyncValue.loading();
+    if (!_isOnline) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     
     try {
       // Simulate loading updates from storage
@@ -197,6 +204,9 @@ class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
   }
 }
 
+final networkStatusProvider = StreamProvider<bool>((ref) => NetworkService.onStatusChange);
+
 final updatesProvider = StateNotifierProvider<UpdatesNotifier, AsyncValue<List<UpdateItem>>>((ref) {
-  return UpdatesNotifier();
+  final isOnline = ref.watch(networkStatusProvider).maybeWhen(data: (v) => v, orElse: () => true);
+  return UpdatesNotifier(isOnline);
 });

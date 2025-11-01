@@ -19,23 +19,13 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     }
   }
 
-  Future<void> updateDownloadedOnly(bool value) async {
-    state = state.copyWith(downloadedOnly: value);
+  Future<void> updateDarkMode(bool value) async {
+    state = state.copyWith(isDarkMode: value);
     await _settingsService.saveSettings(state);
   }
 
   Future<void> updateIncognitoMode(bool value) async {
     state = state.copyWith(incognitoMode: value);
-    await _settingsService.saveSettings(state);
-  }
-
-  Future<void> updateAutoDownload(bool value) async {
-    state = state.copyWith(autoDownload: value);
-    await _settingsService.saveSettings(state);
-  }
-
-  Future<void> updateWifiOnlyDownload(bool value) async {
-    state = state.copyWith(wifiOnlyDownload: value);
     await _settingsService.saveSettings(state);
   }
 
@@ -62,6 +52,16 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
   Future<void> updateFilterBy(String value) async {
     state = state.copyWith(filterBy: value);
     await _settingsService.saveSettings(state);
+  }
+
+  Future<void> resetSettings() async {
+    try {
+      await _settingsService.resetSettings();
+      await _loadSettings(); // Reload to get default settings
+    } catch (e) {
+      // If reset fails, set to defaults locally
+      state = UserSettings();
+    }
   }
 }
 

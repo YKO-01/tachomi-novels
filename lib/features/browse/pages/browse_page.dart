@@ -25,6 +25,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
     super.initState();
     // Load novels when page initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('BrowsePage: Initializing and loading novels...');
       ref.read(browseNotifierProvider.notifier).loadNovels();
     });
   }
@@ -39,6 +40,8 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
   Widget build(BuildContext context) {
     final browseState = ref.watch(browseNotifierProvider);
     final theme = Theme.of(context);
+
+    print('BrowsePage: Building with state: $browseState');
 
     return Scaffold(
       appBar: AppBar(

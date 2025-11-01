@@ -262,6 +262,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 fontWeight: FontWeight.bold,
                 color: theme.textColor,
                 height: readerSettings.lineHeight,
+                fontFamily: readerSettings.fontFamily,
               ),
             ),
             
@@ -274,6 +275,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 fontSize: readerSettings.fontSize,
                 color: theme.textColor,
                 height: readerSettings.lineHeight,
+                fontFamily: readerSettings.fontFamily,
               ),
             ),
             
@@ -295,6 +297,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       fontSize: readerSettings.fontSize - 2,
                       fontWeight: FontWeight.w600,
                       color: theme.textColor,
+                      fontFamily: readerSettings.fontFamily,
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacingXS),
@@ -303,6 +306,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     style: TextStyle(
                       fontSize: readerSettings.fontSize - 4,
                       color: theme.textColor.withValues(alpha: 0.7),
+                      fontFamily: readerSettings.fontFamily,
                     ),
                   ),
                   if (chapter.wordCount != null) ...[
@@ -312,6 +316,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       style: TextStyle(
                         fontSize: readerSettings.fontSize - 4,
                         color: theme.textColor.withValues(alpha: 0.7),
+                        fontFamily: readerSettings.fontFamily,
                       ),
                     ),
                   ],

@@ -119,8 +119,10 @@ class NovelService {
   ];
 
   Future<List<Novel>> getNovels() async {
+    print('NovelService: getNovels() called');
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 1));
+    print('NovelService: Returning ${_mockNovels.length} mock novels');
     return List.from(_mockNovels);
   }
 

@@ -351,6 +351,31 @@ class LibraryManagementService {
     debugPrint('LibraryManagementService: Reset reading statistics');
   }
 
+  static Future<void> clearAllLibraryData() async {
+    await _ensureInitialized();
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Clear library
+      _cachedLibrary.clear();
+      await prefs.remove(_kLibraryKey);
+      
+      // Clear categories
+      _cachedCategories.clear();
+      await prefs.remove(_kCategoriesKey);
+      
+      // Reset statistics
+      _cachedStatistics = ReadingStatistics(lastUpdated: DateTime.now());
+      await _persistStatistics();
+      
+      debugPrint('LibraryManagementService: Cleared all library data (library, categories, statistics)');
+    } catch (error) {
+      debugPrint('LibraryManagementService: Error clearing all library data - $error');
+      rethrow;
+    }
+  }
+
   // MARK: - Private Methods
   static Future<void> _persistLibrary() async {
     try {

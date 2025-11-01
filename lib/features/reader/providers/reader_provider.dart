@@ -102,6 +102,15 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         currentChapterIndex: chapterIndex >= 0 ? chapterIndex : 0,
         isLoading: false,
       );
+      
+      // Add to history immediately when chapter loads successfully
+      try {
+        await _ref.read(historyProvider.notifier).addNovelToHistory(novel, chapter);
+        debugPrint('ReaderProvider: Added to history immediately - ${novel.title}, ${chapter.title}');
+      } catch (error) {
+        debugPrint('ReaderProvider: Error adding to history - $error');
+        // Don't fail the chapter load if history fails
+      }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -110,25 +119,41 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     }
   }
 
-  void goToNextChapter() {
-    if (state.hasNextChapter) {
+  Future<void> goToNextChapter() async {
+    if (state.hasNextChapter && state.novel != null) {
       final nextIndex = state.currentChapterIndex + 1;
       final nextChapter = state.chapters[nextIndex];
       state = state.copyWith(
         chapter: nextChapter,
         currentChapterIndex: nextIndex,
       );
+      
+      // Add to history immediately when navigating to next chapter
+      try {
+        await _ref.read(historyProvider.notifier).addNovelToHistory(state.novel!, nextChapter);
+        debugPrint('ReaderProvider: Added next chapter to history - ${state.novel!.title}, ${nextChapter.title}');
+      } catch (error) {
+        debugPrint('ReaderProvider: Error adding next chapter to history - $error');
+      }
     }
   }
 
-  void goToPreviousChapter() {
-    if (state.hasPreviousChapter) {
+  Future<void> goToPreviousChapter() async {
+    if (state.hasPreviousChapter && state.novel != null) {
       final prevIndex = state.currentChapterIndex - 1;
       final prevChapter = state.chapters[prevIndex];
       state = state.copyWith(
         chapter: prevChapter,
         currentChapterIndex: prevIndex,
       );
+      
+      // Add to history immediately when navigating to previous chapter
+      try {
+        await _ref.read(historyProvider.notifier).addNovelToHistory(state.novel!, prevChapter);
+        debugPrint('ReaderProvider: Added previous chapter to history - ${state.novel!.title}, ${prevChapter.title}');
+      } catch (error) {
+        debugPrint('ReaderProvider: Error adding previous chapter to history - $error');
+      }
     }
   }
 
@@ -180,7 +205,7 @@ class ReaderSettings {
   const ReaderSettings({
     this.fontSize = 16.0,
     this.lineHeight = 1.5,
-    this.fontFamily = 'SF Pro Display',
+    this.fontFamily = 'Default',
     this.theme = ReaderTheme.light,
   });
 

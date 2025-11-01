@@ -130,12 +130,12 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                 ref.read(novelDetailsNotifierProvider(widget.novelId).notifier).toggleFavorite();
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.share),
-              onPressed: () {
-                // Share functionality
-              },
-            ),
+            // IconButton(
+            //   icon: const Icon(Icons.share),
+            //   onPressed: () {
+            //     // Share functionality
+            //   },
+            // ),
           ],
         ),
         
@@ -254,15 +254,15 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                       ),
                     ),
                     const SizedBox(width: AppConstants.spacingS),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // WebView functionality
-                        },
-                        icon: const Icon(Icons.web),
-                        label: const Text('WebView'),
-                      ),
-                    ),
+                    // Expanded(
+                    //   child: OutlinedButton.icon(
+                    //     onPressed: () {
+                    //       // WebView functionality
+                    //     },
+                    //     icon: const Icon(Icons.web),
+                    //     label: const Text('WebView'),
+                    //   ),
+                    // ),
                   ],
                 ),
               ],
@@ -349,34 +349,34 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                         ],
                       ],
                     ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (snapshot.data?['isDownloaded'] == true || chapter.isDownloaded)
-                      Icon(
-                        Icons.download_done,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.download),
-                        onPressed: () {
-                          // Add chapter to download queue
-                          ref.read(downloadQueueProvider.notifier).addDownload(novel, chapter);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Added to download queue')),
-                          );
-                        },
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      onPressed: () {
-                        _showChapterOptions(chapter);
-                      },
-                    ),
-                  ],
-                ),
+                // trailing: Row(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: [
+                //     if (snapshot.data?['isDownloaded'] == true || chapter.isDownloaded)
+                //       Icon(
+                //         Icons.download_done,
+                //         color: Theme.of(context).colorScheme.primary,
+                //         size: 20,
+                //       )
+                //     else
+                //       IconButton(
+                //         icon: const Icon(Icons.download),
+                //         onPressed: () {
+                //           // Add chapter to download queue
+                //           ref.read(downloadQueueProvider.notifier).addDownload(novel, chapter);
+                //           ScaffoldMessenger.of(context).showSnackBar(
+                //             const SnackBar(content: Text('Added to download queue')),
+                //           );
+                //         },
+                //       ),
+                //     IconButton(
+                //       icon: const Icon(Icons.more_vert),
+                //       onPressed: () {
+                //         _showChapterOptions(chapter);
+                //       },
+                //     ),
+                //   ],
+                // ),
                     onTap: () {
                       // Navigate to reader
                       context.push('/reader/${novel.id}/${chapter.id}');

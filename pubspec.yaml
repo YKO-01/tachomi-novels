@@ -58,6 +58,9 @@ dependencies:
   # Utils
   path_provider: ^2.1.2
   shared_preferences: ^2.2.2
+  
+  # Fonts
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:

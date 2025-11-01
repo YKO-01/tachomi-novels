@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -22,14 +23,26 @@ class ReaderPage extends ConsumerStatefulWidget {
 class _ReaderPageState extends ConsumerState<ReaderPage> {
   final ScrollController _scrollController = ScrollController();
   bool _showSettings = false;
+  
+  final List<String> _fontFamilies = [
+    'Default',
+    'Roboto',
+    'Open Sans',
+    'Lato',
+    'Montserrat',
+    'Poppins',
+    'Inter',
+    'Roboto Mono',
+    'Source Sans Pro',
+    'Noto Sans',
+  ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(readerProvider.notifier).loadChapter(widget.novelId, widget.chapterId);
-      // Initialize history tracking when starting to read
-      _initializeHistoryTracking();
+      // History is now added immediately when chapter loads in loadChapter method
     });
     
     // Add scroll listener to track reading progress
@@ -53,10 +66,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     }
   }
 
-  Future<void> _initializeHistoryTracking() async {
-    // Initialize history tracking with current chapter
-    await ref.read(readerProvider.notifier).trackReadingProgress(0.0);
-  }
 
   @override
   void dispose() {
@@ -75,12 +84,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.bookmark_border),
-            onPressed: () {
-              ref.read(readerProvider.notifier).toggleBookmark();
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.bookmark_border),
+          //   onPressed: () {
+          //     ref.read(readerProvider.notifier).toggleBookmark();
+          //   },
+          // ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -102,25 +111,27 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : readerState.error != null
                     ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
-                    const SizedBox(height: AppConstants.spacingM),
-                    Text('Failed to load chapter', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: AppConstants.spacingS),
-                    Text(readerState.error.toString(), style: theme.textTheme.bodyMedium),
-                    const SizedBox(height: AppConstants.spacingM),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.read(readerProvider.notifier).loadChapter(widget.novelId, widget.chapterId);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              )
-                : _buildReaderContent(readerState.novel!, readerState.chapter!),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
+                            const SizedBox(height: AppConstants.spacingM),
+                            Text('Failed to load chapter', style: theme.textTheme.headlineSmall),
+                            const SizedBox(height: AppConstants.spacingS),
+                            Text(readerState.error.toString(), style: theme.textTheme.bodyMedium),
+                            const SizedBox(height: AppConstants.spacingM),
+                            ElevatedButton(
+                              onPressed: () {
+                                ref.read(readerProvider.notifier).loadChapter(widget.novelId, widget.chapterId);
+                              },
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : readerState.novel != null && readerState.chapter != null
+                        ? _buildReaderContent(readerState.novel!, readerState.chapter!)
+                        : const Center(child: CircularProgressIndicator()),
           ),
           
           // Navigation Bar
@@ -205,6 +216,40 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               ),
             ],
           ),
+          
+          const SizedBox(height: AppConstants.spacingS),
+          
+          // Font Family
+          Row(
+            children: [
+              const Icon(Icons.font_download),
+              const SizedBox(width: AppConstants.spacingS),
+              const Text('Font Family'),
+              const Spacer(),
+              DropdownButton<String>(
+                value: readerSettings.fontFamily,
+                items: _fontFamilies.map((font) {
+                  return DropdownMenuItem<String>(
+                    value: font,
+                    child: Text(
+                      font,
+                      style: _getTextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        lineHeight: 1.5,
+                        fontFamily: font == 'Default' ? '' : font,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    ref.read(readerSettingsProvider.notifier).updateFontFamily(value);
+                  }
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -242,6 +287,91 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
+  TextStyle _getTextStyle({
+    required double fontSize,
+    required Color color,
+    required double lineHeight,
+    required String fontFamily,
+    FontWeight? fontWeight,
+  }) {
+    // Map font family names to Google Fonts
+    TextStyle baseStyle;
+    
+    switch (fontFamily) {
+      case 'Roboto':
+        baseStyle = GoogleFonts.roboto(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Open Sans':
+        baseStyle = GoogleFonts.openSans(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Lato':
+        baseStyle = GoogleFonts.lato(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Montserrat':
+        baseStyle = GoogleFonts.montserrat(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Poppins':
+        baseStyle = GoogleFonts.poppins(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Inter':
+        baseStyle = GoogleFonts.inter(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Roboto Mono':
+        baseStyle = GoogleFonts.robotoMono(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Source Sans Pro':
+        baseStyle = GoogleFonts.sourceSans3(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      case 'Noto Sans':
+        baseStyle = GoogleFonts.notoSans(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+        break;
+      default: // 'Default' or any other - use system default
+        baseStyle = TextStyle(
+          fontSize: fontSize,
+          fontWeight: fontWeight ?? FontWeight.normal,
+          height: lineHeight,
+        );
+    }
+    
+    return baseStyle.copyWith(color: color);
+  }
+
   Widget _buildReaderContent(Novel novel, Chapter chapter) {
     final readerSettings = ref.watch(readerSettingsProvider);
     final theme = _getReaderTheme(readerSettings.theme);
@@ -257,12 +387,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             // Chapter Title
             Text(
               chapter.title,
-              style: TextStyle(
+              style: _getTextStyle(
                 fontSize: readerSettings.fontSize + 4,
-                fontWeight: FontWeight.bold,
                 color: theme.textColor,
-                height: readerSettings.lineHeight,
+                lineHeight: readerSettings.lineHeight,
                 fontFamily: readerSettings.fontFamily,
+                fontWeight: FontWeight.bold,
               ),
             ),
             
@@ -271,10 +401,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
             // Chapter Content
             Text(
               chapter.content,
-              style: TextStyle(
+              style: _getTextStyle(
                 fontSize: readerSettings.fontSize,
                 color: theme.textColor,
-                height: readerSettings.lineHeight,
+                lineHeight: readerSettings.lineHeight,
                 fontFamily: readerSettings.fontFamily,
               ),
             ),
@@ -293,19 +423,21 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                 children: [
                   Text(
                     'Chapter ${chapter.chapterNumber}',
-                    style: TextStyle(
+                    style: _getTextStyle(
                       fontSize: readerSettings.fontSize - 2,
-                      fontWeight: FontWeight.w600,
                       color: theme.textColor,
+                      lineHeight: readerSettings.lineHeight,
                       fontFamily: readerSettings.fontFamily,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: AppConstants.spacingXS),
                   Text(
                     'Published ${_formatDate(chapter.publishedAt)}',
-                    style: TextStyle(
+                    style: _getTextStyle(
                       fontSize: readerSettings.fontSize - 4,
                       color: theme.textColor.withValues(alpha: 0.7),
+                      lineHeight: readerSettings.lineHeight,
                       fontFamily: readerSettings.fontFamily,
                     ),
                   ),
@@ -313,9 +445,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                     const SizedBox(height: AppConstants.spacingXS),
                     Text(
                       '${chapter.wordCount} words',
-                      style: TextStyle(
+                      style: _getTextStyle(
                         fontSize: readerSettings.fontSize - 4,
                         color: theme.textColor.withValues(alpha: 0.7),
+                        lineHeight: readerSettings.lineHeight,
                         fontFamily: readerSettings.fontFamily,
                       ),
                     ),

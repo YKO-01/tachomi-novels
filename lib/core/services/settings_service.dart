@@ -67,7 +67,7 @@ class SettingsService {
             downloadedOnly: settingsMap['downloadedOnly'] ?? false,
             incognitoMode: settingsMap['incognitoMode'] ?? false,
             fontSize: (settingsMap['fontSize'] ?? 16.0).toDouble(),
-            fontFamily: settingsMap['fontFamily'] ?? 'SF Pro Display',
+            fontFamily: settingsMap['fontFamily'] ?? 'Default',
             lineHeight: (settingsMap['lineHeight'] ?? 1.5).toDouble(),
             autoDownload: settingsMap['autoDownload'] ?? false,
             wifiOnlyDownload: settingsMap['wifiOnlyDownload'] ?? true,

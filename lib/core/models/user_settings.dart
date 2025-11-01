@@ -39,7 +39,7 @@ class UserSettings extends HiveObject {
     this.downloadedOnly = false,
     this.incognitoMode = false,
     this.fontSize = 16.0,
-    this.fontFamily = 'SF Pro Display',
+    this.fontFamily = 'Default',
     this.lineHeight = 1.5,
     this.autoDownload = false,
     this.wifiOnlyDownload = true,

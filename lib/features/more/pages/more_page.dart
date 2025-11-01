@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/settings_provider.dart';
+import '../../../core/services/history_service.dart';
+import '../../../core/services/favorites_service.dart';
+import '../../../core/services/library_service.dart';
+import '../../../core/services/library_management_service.dart';
+import '../../history/providers/history_provider.dart';
+import '../../favorites/providers/favorites_provider.dart';
 
 class MorePage extends ConsumerStatefulWidget {
   const MorePage({super.key});
@@ -13,13 +20,16 @@ class MorePage extends ConsumerStatefulWidget {
 
 class _MorePageState extends ConsumerState<MorePage> {
   final List<String> _fontFamilies = [
-    'SF Pro Display',
+    'Default',
     'Roboto',
     'Open Sans',
     'Lato',
     'Montserrat',
     'Poppins',
     'Inter',
+    'Roboto Mono',
+    'Source Sans Pro',
+    'Noto Sans',
   ];
 
   @override
@@ -102,40 +112,20 @@ class _MorePageState extends ConsumerState<MorePage> {
           
           const SizedBox(height: AppConstants.spacingL),
           
-          // Privacy Section
-          _buildSection(
-            context,
-            'Privacy',
-            [
-              _buildSwitchTile(
-                context,
-                'Incognito Mode',
-                'Browse without leaving traces',
-                Icons.visibility_off,
-                settings.incognitoMode,
-                (value) {
-                  ref.read(settingsProvider.notifier).updateIncognitoMode(value);
-                },
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: AppConstants.spacingL),
-          
           // Data Management Section
           _buildSection(
             context,
             'Data Management',
             [
-              _buildListTile(
-                context,
-                'Backup & Restore',
-                'Backup your library and settings',
-                Icons.backup,
-                () {
-                  _showBackupRestore(context);
-                },
-              ),
+              // _buildListTile(
+              //   context,
+              //   'Backup & Restore',
+              //   'Backup your library and settings',
+              //   Icons.backup,
+              //   () {
+              //     _showBackupRestore(context);
+              //   },
+              // ),
               _buildListTile(
                 context,
                 'Clear Cache',
@@ -306,13 +296,44 @@ class _MorePageState extends ConsumerState<MorePage> {
               final fontFamily = _fontFamilies[index];
               final isSelected = fontFamily == currentFont;
               
+              // Get the font style for preview
+              TextStyle? previewStyle;
+              switch (fontFamily) {
+                case 'Roboto':
+                  previewStyle = GoogleFonts.roboto(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Open Sans':
+                  previewStyle = GoogleFonts.openSans(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Lato':
+                  previewStyle = GoogleFonts.lato(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Montserrat':
+                  previewStyle = GoogleFonts.montserrat(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Poppins':
+                  previewStyle = GoogleFonts.poppins(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Inter':
+                  previewStyle = GoogleFonts.inter(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Roboto Mono':
+                  previewStyle = GoogleFonts.robotoMono(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Source Sans Pro':
+                  previewStyle = GoogleFonts.sourceSans3(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                case 'Noto Sans':
+                  previewStyle = GoogleFonts.notoSans(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+                  break;
+                default: // 'Default'
+                  previewStyle = TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal);
+              }
+              
               return ListTile(
                 title: Text(
                   fontFamily,
-                  style: TextStyle(
-                    fontFamily: fontFamily,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
+                  style: previewStyle,
                 ),
                 trailing: isSelected
                     ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
@@ -355,8 +376,16 @@ class _MorePageState extends ConsumerState<MorePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Cache & Reset Settings'),
-        content: const Text('This will clear all cached images, data, and reset all settings to defaults. This action cannot be undone. Continue?'),
+        title: const Text('Clear All Data & Reset Settings'),
+        content: const Text(
+          'This will permanently delete:\n'
+          '• All reading history\n'
+          '• All favorites\n'
+          '• All library data\n'
+          '• All settings (will reset to defaults)\n'
+          '• All cached images\n\n'
+          'This action cannot be undone. Continue?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -366,19 +395,44 @@ class _MorePageState extends ConsumerState<MorePage> {
             onPressed: () async {
               Navigator.pop(context);
               
-              // Reset settings to defaults
-              await ref.read(settingsProvider.notifier).resetSettings();
-              
-              // Clear cache (you can add more cache clearing logic here)
-              // For example: image cache, downloaded chapters, etc.
-              
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Cache cleared and settings reset to defaults'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+              try {
+                // Clear history
+                await HistoryService.clearAllHistory();
+                ref.invalidate(historyProvider);
+                
+                // Clear favorites
+                await FavoritesService.clearFavorites();
+                ref.invalidate(favoritesProvider);
+                
+                // Clear library (both services)
+                await LibraryService.clearLibrary();
+                await LibraryManagementService.clearAllLibraryData();
+                
+                // Reset settings to defaults
+                await ref.read(settingsProvider.notifier).resetSettings();
+                
+                // Clear cache (you can add more cache clearing logic here)
+                // For example: image cache, downloaded chapters, etc.
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('All data cleared and settings reset to defaults'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (error) {
+                debugPrint('Error clearing data: $error');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error clearing data: $error'),
+                      duration: const Duration(seconds: 3),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

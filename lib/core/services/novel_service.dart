@@ -1,11 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../models/novel.dart';
 import '../models/chapter.dart';
 import '../../shared/constants/app_constants.dart';
+import 'novel_scraper_service.dart';
 
 class NovelService {
+  final NovelScraperService? _scraperService;
+  
+  NovelService({NovelScraperService? scraperService}) : _scraperService = scraperService;
+
   // Mock data for demonstration
   static final List<Novel> _mockNovels = [
     Novel(
@@ -119,10 +125,10 @@ class NovelService {
   ];
 
   Future<List<Novel>> getNovels() async {
-    print('NovelService: getNovels() called');
+    debugPrint('NovelService: getNovels() called');
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 1));
-    print('NovelService: Returning ${_mockNovels.length} mock novels');
+    debugPrint('NovelService: Returning ${_mockNovels.length} mock novels');
     return List.from(_mockNovels);
   }
 
@@ -200,8 +206,54 @@ class NovelService {
     
     return novels;
   }
+
+  /// Scrape novels from a URL
+  Future<List<Novel>> scrapeNovelsFromUrl(String url, {String? sourceType}) async {
+    if (_scraperService == null) {
+      debugPrint('NovelService: Scraper service not available');
+      return [];
+    }
+    
+    try {
+      return await _scraperService.scrapeNovels(url, sourceType: sourceType);
+    } catch (e) {
+      debugPrint('NovelService: Error scraping novels - $e');
+      rethrow;
+    }
+  }
+
+  /// Scrape chapters for a novel
+  Future<List<Chapter>> scrapeChaptersFromUrl(String novelUrl, String novelId, {String? sourceType}) async {
+    if (_scraperService == null) {
+      debugPrint('NovelService: Scraper service not available');
+      return [];
+    }
+    
+    try {
+      return await _scraperService.scrapeChapters(novelUrl, novelId, sourceType: sourceType);
+    } catch (e) {
+      debugPrint('NovelService: Error scraping chapters - $e');
+      rethrow;
+    }
+  }
+
+  /// Scrape chapter content
+  Future<Chapter?> scrapeChapterContentFromUrl(String chapterUrl, String chapterId, String novelId, {String? sourceType}) async {
+    if (_scraperService == null) {
+      debugPrint('NovelService: Scraper service not available');
+      return null;
+    }
+    
+    try {
+      return await _scraperService.scrapeChapterContent(chapterUrl, chapterId, novelId, sourceType: sourceType);
+    } catch (e) {
+      debugPrint('NovelService: Error scraping chapter content - $e');
+      return null;
+    }
+  }
 }
 
 final novelServiceProvider = Provider<NovelService>((ref) {
-  return NovelService();
+  final scraperService = ref.watch(novelScraperServiceProvider);
+  return NovelService(scraperService: scraperService);
 });

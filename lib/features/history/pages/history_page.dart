@@ -215,6 +215,11 @@ class HistoryPage extends ConsumerWidget {
             ? CachedNetworkImage(
                 imageUrl: history.coverUrl,
                 fit: BoxFit.cover,
+                httpHeaders: const {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                },
+                maxWidthDiskCache: 500,
+                maxHeightDiskCache: 700,
                 placeholder: (context, url) => _buildPlaceholderIcon(theme),
                 errorWidget: (context, url, error) => _buildPlaceholderIcon(theme),
               )

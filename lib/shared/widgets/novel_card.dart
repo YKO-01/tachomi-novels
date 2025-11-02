@@ -41,18 +41,39 @@ class NovelCard extends StatelessWidget {
                   imageUrl: novel.coverUrl,
                   fit: BoxFit.cover,
                   width: double.infinity,
+                  httpHeaders: const {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                  },
+                  maxWidthDiskCache: 1000,
+                  maxHeightDiskCache: 1000,
+                  fadeInDuration: const Duration(milliseconds: 300),
+                  fadeOutDuration: const Duration(milliseconds: 100),
                   placeholder: (context, url) => Container(
-                    color: theme.colorScheme.surface,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: theme.colorScheme.surface,
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      size: 48,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          size: 32,
+                        ),
+                        const SizedBox(height: 4),
+                        Icon(
+                          Icons.book,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          size: 24,
+                        ),
+                      ],
                     ),
                   ),
                 ),

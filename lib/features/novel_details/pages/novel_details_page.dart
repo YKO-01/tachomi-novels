@@ -110,12 +110,17 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
             background: CachedNetworkImage(
               imageUrl: novel.coverUrl,
               fit: BoxFit.cover,
+              httpHeaders: const {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              },
+              maxWidthDiskCache: 1000,
+              maxHeightDiskCache: 1000,
               placeholder: (context, url) => Container(
-                color: Theme.of(context).colorScheme.surface,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: const Center(child: CircularProgressIndicator()),
               ),
               errorWidget: (context, url, error) => Container(
-                color: Theme.of(context).colorScheme.surface,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: const Icon(Icons.image_not_supported, size: 64),
               ),
             ),

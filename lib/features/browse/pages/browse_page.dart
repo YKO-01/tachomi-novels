@@ -7,6 +7,7 @@ import '../../../shared/widgets/novel_card.dart';
 import '../../../shared/widgets/filter_chip.dart' as custom;
 import '../../../shared/constants/app_constants.dart';
 import '../providers/browse_provider.dart';
+import 'scrape_novels_page.dart';
 
 class BrowsePage extends ConsumerStatefulWidget {
   const BrowsePage({super.key});
@@ -47,6 +48,23 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
       appBar: AppBar(
         title: const Text('Updates'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_download),
+            tooltip: 'Scrape Novels',
+            onPressed: () async {
+              final novel = await Navigator.push<Novel>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ScrapeNovelsPage(),
+                ),
+              );
+              // Handle selected novel if returned
+              if (novel != null && context.mounted) {
+                // Could add to library or navigate to details
+                context.push('/novel-details/${novel.id}');
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,

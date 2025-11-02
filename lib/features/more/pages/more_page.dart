@@ -154,15 +154,15 @@ class _MorePageState extends ConsumerState<MorePage> {
                   _showAbout(context);
                 },
               ),
-              _buildListTile(
-                context,
-                'Help & Support',
-                'Get help and report issues',
-                Icons.help,
-                () {
-                  _showHelp(context);
-                },
-              ),
+              // _buildListTile(
+              //   context,
+              //   'Help & Support',
+              //   'Get help and report issues',
+              //   Icons.help,
+              //   () {
+              //     _showHelp(context);
+              //   },
+              // ),
               // _buildListTile(
               //   context,
               //   'Privacy Policy',
@@ -453,7 +453,7 @@ class _MorePageState extends ConsumerState<MorePage> {
       applicationVersion: AppConstants.appVersion,
       applicationIcon: const Icon(Icons.library_books, size: 48),
       children: [
-        const Text('A beautiful novel reader app inspired by Tapas and Tachiyomi.'),
+        const Text('A beautiful novel reader app.'),
         const SizedBox(height: 16),
         const Text('Features:'),
         const Text('• Clean, modern UI'),
@@ -464,21 +464,21 @@ class _MorePageState extends ConsumerState<MorePage> {
     );
   }
 
-  void _showHelp(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Help & Support'),
-        content: const Text('Need help? Contact us at ahmedyakoubi.1337@gmail.com'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showHelp(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Help & Support'),
+  //       content: const Text('Need help? Contact us at ahmedyakoubi.1337@gmail.com'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('Close'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   // void _showPrivacyPolicy(BuildContext context) {
   //   showDialog(

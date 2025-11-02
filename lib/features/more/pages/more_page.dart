@@ -163,15 +163,15 @@ class _MorePageState extends ConsumerState<MorePage> {
                   _showHelp(context);
                 },
               ),
-              _buildListTile(
-                context,
-                'Privacy Policy',
-                'How we handle your data',
-                Icons.privacy_tip,
-                () {
-                  _showPrivacyPolicy(context);
-                },
-              ),
+              // _buildListTile(
+              //   context,
+              //   'Privacy Policy',
+              //   'How we handle your data',
+              //   Icons.privacy_tip,
+              //   () {
+              //     _showPrivacyPolicy(context);
+              //   },
+              // ),
             ],
           ),
         ],
@@ -449,7 +449,7 @@ class _MorePageState extends ConsumerState<MorePage> {
   void _showAbout(BuildContext context) {
     showAboutDialog(
       context: context,
-      applicationName: AppConstants.appName,
+      applicationName: "Tachiyomi",
       applicationVersion: AppConstants.appVersion,
       applicationIcon: const Icon(Icons.library_books, size: 48),
       children: [
@@ -457,9 +457,9 @@ class _MorePageState extends ConsumerState<MorePage> {
         const SizedBox(height: 16),
         const Text('Features:'),
         const Text('• Clean, modern UI'),
-        const Text('• Offline reading'),
+        // const Text('• Offline reading'),
         const Text('• Customizable themes'),
-        const Text('• Smart library management'),
+        const Text('• Smart reading experience'),
       ],
     );
   }
@@ -469,7 +469,7 @@ class _MorePageState extends ConsumerState<MorePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Help & Support'),
-        content: const Text('Need help? Contact us at support@tachomi.com'),
+        content: const Text('Need help? Contact us at ahmedyakoubi.1337@gmail.com'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -480,19 +480,19 @@ class _MorePageState extends ConsumerState<MorePage> {
     );
   }
 
-  void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const Text('Your privacy is important to us. We do not collect personal data without your consent.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showPrivacyPolicy(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Privacy Policy'),
+  //       content: const Text('Your privacy is important to us. We do not collect personal data without your consent.'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('Close'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

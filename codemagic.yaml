@@ -1,0 +1,33 @@
+workflows:
+  testFlight:
+    name: Ahmed Yakoubi
+    integrations:
+      app_store_connect: store1_ahmed_api
+    environment:
+      flutter: stable
+      ios_signing:
+        bundle_identifier: com.tachiyomi.tachiyomiapp
+        provisioning_profiles:
+          - Provisioning_tachiyomi
+        certificates:
+          - store1_cerificate
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter packages pub get
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build IPA
+        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - ahmedyakoubi.1337@gmail.com
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration

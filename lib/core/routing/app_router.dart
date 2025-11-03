@@ -138,7 +138,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             label: 'History',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.explore),
+            icon: Icon(Icons.bookmark_border),
             label: 'Favorites',
           ),
           BottomNavigationBarItem(

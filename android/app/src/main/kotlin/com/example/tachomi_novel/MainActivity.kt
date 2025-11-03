@@ -1,4 +1,4 @@
-package com.example.tachomi_novel
+package com.tachiyomi.tachiyomiapp
 
 import io.flutter.embedding.android.FlutterActivity
 

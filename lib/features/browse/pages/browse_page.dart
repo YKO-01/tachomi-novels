@@ -48,23 +48,23 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
       appBar: AppBar(
         title: const Text('Updates'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.cloud_download),
-            tooltip: 'Scrape Novels',
-            onPressed: () async {
-              final novel = await Navigator.push<Novel>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ScrapeNovelsPage(),
-                ),
-              );
-              // Handle selected novel if returned
-              if (novel != null && context.mounted) {
-                // Could add to library or navigate to details
-                context.push('/novel-details/${novel.id}');
-              }
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.cloud_download),
+          //   tooltip: 'Scrape Novels',
+          //   onPressed: () async {
+          //     final novel = await Navigator.push<Novel>(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (context) => const ScrapeNovelsPage(),
+          //       ),
+          //     );
+          //     // Handle selected novel if returned
+          //     if (novel != null && context.mounted) {
+          //       // Could add to library or navigate to details
+          //       context.push('/novel-details/${novel.id}');
+          //     }
+          //   },
+          // ),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,

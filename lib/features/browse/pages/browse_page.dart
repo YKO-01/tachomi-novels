@@ -7,7 +7,6 @@ import '../../../shared/widgets/novel_card.dart';
 import '../../../shared/widgets/filter_chip.dart' as custom;
 import '../../../shared/constants/app_constants.dart';
 import '../providers/browse_provider.dart';
-import 'scrape_novels_page.dart';
 
 class BrowsePage extends ConsumerStatefulWidget {
   const BrowsePage({super.key});

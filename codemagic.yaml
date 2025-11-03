@@ -8,7 +8,7 @@ workflows:
       ios_signing:
         bundle_identifier: com.tachiyomi.tachiyomiapp
         provisioning_profiles:
-          - Provisioning_tachiyomi
+          - Provisioning_com.tachiyomi.tachiyomiapp
         certificates:
           - store1_cerificate
     scripts:

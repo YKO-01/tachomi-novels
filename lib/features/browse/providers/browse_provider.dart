@@ -56,17 +56,28 @@ class BrowseNotifier extends StateNotifier<AsyncValue<List<Novel>>> {
     switch (_currentFilter) {
       case AppConstants.filterRomance:
         filteredNovels = _allNovels.where((novel) => 
-          novel.tags.contains('Romance') || novel.tags.contains('romance')).toList();
+          novel.tags.any((tag) => tag.toLowerCase() == 'romance')).toList();
         break;
-      case AppConstants.filterBL:
+      case AppConstants.filterAction:
         filteredNovels = _allNovels.where((novel) => 
-          novel.tags.contains('BL') || novel.tags.contains('bl') || 
-          novel.tags.contains('Boys Love') || novel.tags.contains('boys love')).toList();
+          novel.tags.any((tag) => tag.toLowerCase() == 'action')).toList();
         break;
       case AppConstants.filterSliceOfLife:
         filteredNovels = _allNovels.where((novel) => 
-          novel.tags.contains('Slice of Life') || novel.tags.contains('slice of life') ||
-          novel.tags.contains('SliceOfLife')).toList();
+          novel.tags.any((tag) => tag.toLowerCase() == 'slice of life' || 
+                                 tag.toLowerCase() == 'sliceoflife')).toList();
+        break;
+      case AppConstants.filterFantasy:
+        filteredNovels = _allNovels.where((novel) => 
+          novel.tags.any((tag) => tag.toLowerCase() == 'fantasy')).toList();
+        break;
+      case AppConstants.filterMystery:
+        filteredNovels = _allNovels.where((novel) => 
+          novel.tags.any((tag) => tag.toLowerCase() == 'mystery')).toList();
+        break;
+      case AppConstants.filterDrama:
+        filteredNovels = _allNovels.where((novel) => 
+          novel.tags.any((tag) => tag.toLowerCase() == 'drama')).toList();
         break;
       case AppConstants.filterAll:
       default:

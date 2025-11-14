@@ -46,10 +46,11 @@ class AppConstants {
   static const String filterCompleted = 'Completed';
   static const String filterOngoing = 'Ongoing';
   static const String filterRomance = 'Romance';
-  static const String filterBL = 'BL';
+  static const String filterAction = 'Action';
   static const String filterSliceOfLife = 'Slice of Life';
   static const String filterFantasy = 'Fantasy';
   static const String filterMystery = 'Mystery';
+  static const String filterDrama = 'Drama';
   static const String filterComedy = 'Comedy';
   
   // Navigation Routes

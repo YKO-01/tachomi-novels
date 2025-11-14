@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 import '../../../core/services/network_service.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
@@ -52,120 +54,82 @@ class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
     }
     
     try {
-      // Simulate loading updates from storage
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Load novels from JSON
+      final String novelsJsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      final List<dynamic> novelsJsonList = json.decode(novelsJsonString);
       
-      // Mock updates data
-      final updates = [
-        UpdateItem(
-          id: '1',
-          novel: Novel(
-            id: '1',
-            title: 'The Crown\'s Shadow',
-            author: 'Sarah Chen',
-            description: 'A fantasy romance about a princess who discovers her true power lies not in her crown, but in the shadows she casts.',
-            coverUrl: 'https://picsum.photos/300/400?random=1',
-            tags: ['Fantasy', 'Romance', 'Magic'],
-            status: 'Ongoing',
-            totalChapters: 45,
-            lastUpdated: DateTime.now().subtract(const Duration(days: 2)),
-            rating: 4.8,
-            views: 125000,
-          ),
-          chapter: Chapter(
-            id: '1-46',
-            novelId: '1',
-            title: 'The Shadow\'s Embrace',
-            chapterNumber: 46,
-            content: 'The shadows wrapped around Elara like a protective cloak...',
-            publishedAt: DateTime.now().subtract(const Duration(hours: 3)),
-            wordCount: 3200,
-          ),
-          status: UpdateStatus.newChapter,
-          publishedAt: DateTime.now().subtract(const Duration(hours: 3)),
-        ),
-        UpdateItem(
-          id: '2',
-          novel: Novel(
-            id: '3',
-            title: 'Midnight Express',
-            author: 'Jordan Kim',
-            description: 'A mysterious train that only appears at midnight, taking passengers to destinations unknown.',
-            coverUrl: 'https://picsum.photos/300/400?random=3',
-            tags: ['Mystery', 'Supernatural', 'Adventure'],
-            status: 'Ongoing',
-            totalChapters: 22,
-            lastUpdated: DateTime.now().subtract(const Duration(days: 1)),
-            rating: 4.9,
-            views: 156000,
-          ),
-          chapter: Chapter(
-            id: '3-23',
-            novelId: '3',
-            title: 'The Final Station',
-            chapterNumber: 23,
-            content: 'The train slowed as it approached what appeared to be the final station...',
-            publishedAt: DateTime.now().subtract(const Duration(days: 1)),
-            wordCount: 2800,
-          ),
-          status: UpdateStatus.unread,
-          publishedAt: DateTime.now().subtract(const Duration(days: 1)),
-        ),
-        UpdateItem(
-          id: '3',
-          novel: Novel(
-            id: '4',
-            title: 'Love in Translation',
-            author: 'Maya Patel',
-            description: 'A bilingual romance that explores the beauty of communication across languages and cultures.',
-            coverUrl: 'https://picsum.photos/300/400?random=4',
-            tags: ['Romance', 'BL', 'Cultural'],
-            status: 'Ongoing',
-            totalChapters: 38,
-            lastUpdated: DateTime.now().subtract(const Duration(days: 3)),
-            rating: 4.7,
-            views: 98000,
-          ),
-          chapter: Chapter(
-            id: '4-39',
-            novelId: '4',
-            title: 'Lost in Translation',
-            chapterNumber: 39,
-            content: 'The language barrier seemed insurmountable, but their hearts spoke the same language...',
-            publishedAt: DateTime.now().subtract(const Duration(days: 2)),
-            wordCount: 2400,
-          ),
-          status: UpdateStatus.downloaded,
-          publishedAt: DateTime.now().subtract(const Duration(days: 2)),
-        ),
-        UpdateItem(
-          id: '4',
-          novel: Novel(
-            id: '6',
-            title: 'Starlight Academy',
-            author: 'Luna Star',
-            description: 'A magical academy where students learn to harness the power of starlight in this enchanting coming-of-age story.',
-            coverUrl: 'https://picsum.photos/300/400?random=6',
-            tags: ['Fantasy', 'School Life', 'Magic'],
-            status: 'Ongoing',
-            totalChapters: 28,
-            lastUpdated: DateTime.now().subtract(const Duration(days: 4)),
-            rating: 4.8,
-            views: 134000,
-          ),
-          chapter: Chapter(
-            id: '6-29',
-            novelId: '6',
-            title: 'The Starlight Ceremony',
-            chapterNumber: 29,
-            content: 'The annual starlight ceremony was about to begin...',
-            publishedAt: DateTime.now().subtract(const Duration(days: 3)),
-            wordCount: 2600,
-          ),
-          status: UpdateStatus.read,
-          publishedAt: DateTime.now().subtract(const Duration(days: 3)),
-        ),
-      ];
+      // Load chapters from JSON (which has chapters nested in novels)
+      final String chaptersJsonString = await rootBundle.loadString('assets/data/mock_chapters.json');
+      final List<dynamic> chaptersJsonList = json.decode(chaptersJsonString);
+      
+      // Create a map of novel ID to Novel object
+      final Map<String, Novel> novelsMap = {};
+      for (var novelJson in novelsJsonList) {
+        final novel = Novel(
+          id: novelJson['id'],
+          title: novelJson['title'],
+          author: novelJson['author'],
+          description: novelJson['description'],
+          coverUrl: novelJson['coverUrl'],
+          tags: List<String>.from(novelJson['tags']),
+          status: novelJson['status'],
+          totalChapters: novelJson['totalChapters'],
+          lastUpdated: DateTime.parse(novelJson['lastUpdated']),
+          rating: (novelJson['rating'] as num).toDouble(),
+          views: novelJson['views'],
+          isFavorite: novelJson['isFavorite'] ?? false,
+          isDownloaded: novelJson['isDownloaded'] ?? false,
+          currentChapter: novelJson['currentChapter'] ?? 0,
+        );
+        novelsMap[novel.id] = novel;
+      }
+      
+      // Create UpdateItems from chapters
+      final List<UpdateItem> updates = [];
+      
+      for (var novelWithChaptersJson in chaptersJsonList) {
+        final novelId = novelWithChaptersJson['id'] as String;
+        final novel = novelsMap[novelId];
+        
+        if (novel == null) continue;
+        
+        final chaptersJson = novelWithChaptersJson['chapters'] as List<dynamic>?;
+        if (chaptersJson == null) continue;
+        
+        for (var chapterJson in chaptersJson) {
+          final chapter = Chapter(
+            id: chapterJson['id'],
+            novelId: chapterJson['novelId'],
+            title: chapterJson['title'],
+            chapterNumber: chapterJson['chapterNumber'],
+            content: chapterJson['content'],
+            publishedAt: DateTime.parse(chapterJson['publishedAt']),
+            wordCount: chapterJson['wordCount'],
+            isDownloaded: chapterJson['isDownloaded'] ?? false,
+            isRead: chapterJson['isRead'] ?? false,
+          );
+          
+          // Determine status based on chapter properties
+          UpdateStatus status;
+          if (chapter.isDownloaded) {
+            status = UpdateStatus.downloaded;
+          } else if (chapter.isRead) {
+            status = UpdateStatus.read;
+          } else {
+            // Check if this is a new chapter (published recently)
+            final daysSincePublished = DateTime.now().difference(chapter.publishedAt).inDays;
+            status = daysSincePublished <= 7 ? UpdateStatus.newChapter : UpdateStatus.unread;
+          }
+          
+          updates.add(UpdateItem(
+            id: chapter.id,
+            novel: novel,
+            chapter: chapter,
+            status: status,
+            publishedAt: chapter.publishedAt,
+          ));
+        }
+      }
       
       // Sort by published date (newest first)
       updates.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));

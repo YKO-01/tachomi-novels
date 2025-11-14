@@ -126,18 +126,69 @@ class NovelService {
 
   Future<List<Novel>> getNovels() async {
     debugPrint('NovelService: getNovels() called');
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-    debugPrint('NovelService: Returning ${_mockNovels.length} mock novels');
-    return List.from(_mockNovels);
+    try {
+      // Load from JSON file
+      final String jsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      
+      final novels = jsonList.map((json) => Novel(
+        id: json['id'],
+        title: json['title'],
+        author: json['author'],
+        description: json['description'],
+        coverUrl: json['coverUrl'],
+        tags: List<String>.from(json['tags']),
+        status: json['status'],
+        totalChapters: json['totalChapters'],
+        lastUpdated: DateTime.parse(json['lastUpdated']),
+        rating: (json['rating'] as num).toDouble(),
+        views: json['views'],
+        isFavorite: json['isFavorite'] ?? false,
+        isDownloaded: json['isDownloaded'] ?? false,
+        currentChapter: json['currentChapter'] ?? 0,
+      )).toList();
+      
+      debugPrint('NovelService: Loaded ${novels.length} novels from JSON');
+      return novels;
+    } catch (e) {
+      debugPrint('NovelService: Error loading from JSON - $e, falling back to mock data');
+      // Fallback to mock data
+      await Future.delayed(const Duration(seconds: 1));
+      return List.from(_mockNovels);
+    }
   }
 
   Future<Novel?> getNovelById(String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
     try {
-      return _mockNovels.firstWhere((novel) => novel.id == id);
+      // Load from JSON file
+      final String jsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      
+      final novelJson = jsonList.firstWhere((json) => json['id'] == id);
+      return Novel(
+        id: novelJson['id'],
+        title: novelJson['title'],
+        author: novelJson['author'],
+        description: novelJson['description'],
+        coverUrl: novelJson['coverUrl'],
+        tags: List<String>.from(novelJson['tags']),
+        status: novelJson['status'],
+        totalChapters: novelJson['totalChapters'],
+        lastUpdated: DateTime.parse(novelJson['lastUpdated']),
+        rating: (novelJson['rating'] as num).toDouble(),
+        views: novelJson['views'],
+        isFavorite: novelJson['isFavorite'] ?? false,
+        isDownloaded: novelJson['isDownloaded'] ?? false,
+        currentChapter: novelJson['currentChapter'] ?? 0,
+      );
     } catch (e) {
-      return null;
+      // Fallback to mock data
+      try {
+        return _mockNovels.firstWhere((novel) => novel.id == id);
+      } catch (_) {
+        return null;
+      }
     }
   }
 
@@ -145,24 +196,42 @@ class NovelService {
     await Future.delayed(const Duration(milliseconds: 500));
     
     try {
-      // Load from JSON file
+      // Load from JSON file (which has chapters nested in novels)
       final String jsonString = await rootBundle.loadString('assets/data/mock_chapters.json');
       final List<dynamic> jsonList = json.decode(jsonString);
       
-      final chapters = jsonList.map((json) => Chapter(
-        id: json['id'],
-        novelId: json['novelId'],
-        title: json['title'],
-        chapterNumber: json['chapterNumber'],
-        content: json['content'],
-        publishedAt: DateTime.parse(json['publishedAt']),
-        isDownloaded: json['isDownloaded'] ?? false,
-        isRead: json['isRead'] ?? false,
-        wordCount: json['wordCount'],
+      // Find the novel with matching ID
+      dynamic novelWithChapters;
+      try {
+        novelWithChapters = jsonList.firstWhere(
+          (novelJson) => novelJson['id'] == novelId,
+        );
+      } catch (e) {
+        // Novel not found
+        return [];
+      }
+      
+      // Extract chapters from the novel
+      final chaptersJson = novelWithChapters['chapters'] as List<dynamic>?;
+      if (chaptersJson == null) {
+        return [];
+      }
+      
+      final chapters = chaptersJson.map((chapterJson) => Chapter(
+        id: chapterJson['id'],
+        novelId: chapterJson['novelId'],
+        title: chapterJson['title'],
+        chapterNumber: chapterJson['chapterNumber'],
+        content: chapterJson['content'],
+        publishedAt: DateTime.parse(chapterJson['publishedAt']),
+        isDownloaded: chapterJson['isDownloaded'] ?? false,
+        isRead: chapterJson['isRead'] ?? false,
+        wordCount: chapterJson['wordCount'],
       )).toList();
       
-      return chapters.where((chapter) => chapter.novelId == novelId).toList();
+      return chapters;
     } catch (e) {
+      debugPrint('NovelService: Error loading chapters from JSON - $e, falling back to mock data');
       // Fallback to mock data
       return _mockChapters.where((chapter) => chapter.novelId == novelId).toList();
     }
@@ -170,41 +239,82 @@ class NovelService {
 
   Future<List<Novel>> searchNovels(String query) async {
     await Future.delayed(const Duration(seconds: 1));
-    return _mockNovels.where((novel) {
-      return novel.title.toLowerCase().contains(query.toLowerCase()) ||
-             novel.author.toLowerCase().contains(query.toLowerCase()) ||
-             novel.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase()));
-    }).toList();
+    try {
+      final novels = await getNovels();
+      return novels.where((novel) {
+        return novel.title.toLowerCase().contains(query.toLowerCase()) ||
+               novel.author.toLowerCase().contains(query.toLowerCase()) ||
+               novel.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase()));
+      }).toList();
+    } catch (e) {
+      // Fallback to mock data
+      return _mockNovels.where((novel) {
+        return novel.title.toLowerCase().contains(query.toLowerCase()) ||
+               novel.author.toLowerCase().contains(query.toLowerCase()) ||
+               novel.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase()));
+      }).toList();
+    }
   }
 
   Future<List<Novel>> getNovelsByFilter(String filter) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    if (filter == AppConstants.filterAll) {
-      return List.from(_mockNovels);
+    try {
+      final novels = await getNovels();
+      if (filter == AppConstants.filterAll) {
+        return novels;
+      }
+      return novels.where((novel) => novel.tags.contains(filter)).toList();
+    } catch (e) {
+      // Fallback to mock data
+      if (filter == AppConstants.filterAll) {
+        return List.from(_mockNovels);
+      }
+      return _mockNovels.where((novel) => novel.tags.contains(filter)).toList();
     }
-    return _mockNovels.where((novel) => novel.tags.contains(filter)).toList();
   }
 
   Future<List<Novel>> getNovelsBySort(String sortBy) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    final novels = List<Novel>.from(_mockNovels);
-    
-    switch (sortBy) {
-      case AppConstants.sortPopular:
-        novels.sort((a, b) => b.views.compareTo(a.views));
-        break;
-      case AppConstants.sortLatest:
-        novels.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
-        break;
-      case AppConstants.sortRating:
-        novels.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case AppConstants.sortViews:
-        novels.sort((a, b) => b.views.compareTo(a.views));
-        break;
+    try {
+      final novels = List<Novel>.from(await getNovels());
+      
+      switch (sortBy) {
+        case AppConstants.sortPopular:
+          novels.sort((a, b) => b.views.compareTo(a.views));
+          break;
+        case AppConstants.sortLatest:
+          novels.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+          break;
+        case AppConstants.sortRating:
+          novels.sort((a, b) => b.rating.compareTo(a.rating));
+          break;
+        case AppConstants.sortViews:
+          novels.sort((a, b) => b.views.compareTo(a.views));
+          break;
+      }
+      
+      return novels;
+    } catch (e) {
+      // Fallback to mock data
+      final novels = List<Novel>.from(_mockNovels);
+      
+      switch (sortBy) {
+        case AppConstants.sortPopular:
+          novels.sort((a, b) => b.views.compareTo(a.views));
+          break;
+        case AppConstants.sortLatest:
+          novels.sort((a, b) => b.lastUpdated.compareTo(a.lastUpdated));
+          break;
+        case AppConstants.sortRating:
+          novels.sort((a, b) => b.rating.compareTo(a.rating));
+          break;
+        case AppConstants.sortViews:
+          novels.sort((a, b) => b.views.compareTo(a.views));
+          break;
+      }
+      
+      return novels;
     }
-    
-    return novels;
   }
 
   /// Scrape novels from a URL

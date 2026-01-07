@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel.dart';
 import '../../../shared/widgets/novel_card.dart';
 import '../../../shared/constants/app_constants.dart';
@@ -137,7 +138,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
           final novel = novels[index];
           return NovelCard(
             novel: novel,
-            onTap: () => _navigateToNovelDetails(novel.id),
+            onTap: () => gAds.rewardInstance.showRewardAd(() {
+              _navigateToNovelDetails(novel.id);
+            }),
             onLongPress: () => _showNovelOptions(novel),
           );
         },

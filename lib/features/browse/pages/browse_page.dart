@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/services/library_service.dart';
 import '../../../shared/widgets/novel_card.dart';
@@ -208,7 +209,12 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           final novel = novels[index];
           return NovelCard(
             novel: novel,
-            onTap: () => _navigateToNovelDetails(novel.id),
+            onTap: () {
+              print("-------- you are enter the details");
+              gAds.rewardInstance.showRewardAd((){
+                _navigateToNovelDetails(novel.id);
+              });
+            },
             onLongPress: () => _showNovelOptions(novel),
           );
         },

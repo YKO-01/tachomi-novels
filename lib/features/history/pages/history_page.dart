@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel_history.dart';
 import '../../../shared/constants/app_constants.dart';
 import '../providers/history_provider.dart';
@@ -175,7 +176,9 @@ class HistoryPage extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
       ),
       child: InkWell(
-        onTap: () => _navigateToReader(context, history),
+        onTap: () => gAds.rewardInstance.showRewardAd(() {
+          _navigateToReader(context, history);
+        }),
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingM),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
 import '../../../core/services/library_service.dart';
@@ -41,7 +42,9 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
             final novel = data['novel'] as Novel;
             final chapters = data['chapters'] as List<Chapter>;
             if (chapters.isNotEmpty) {
-              context.push('/reader/${novel.id}/${chapters.first.id}');
+              gAds.rewardInstance.showRewardAd(() {
+                context.push('/reader/${novel.id}/${chapters.first.id}');
+              });
             }
           },
           icon: const Icon(Icons.play_arrow),
@@ -384,7 +387,9 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                 // ),
                     onTap: () {
                       // Navigate to reader
-                      context.push('/reader/${novel.id}/${chapter.id}');
+                      gAds.rewardInstance.showRewardAd(() {
+                        context.push('/reader/${novel.id}/${chapter.id}');
+                      });
                     },
                   );
                 },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:tachomi_novel/features/splash_screen.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'shared/constants/app_constants.dart';
@@ -17,7 +18,10 @@ Future<void> main() async {
 
   runApp(
     const ProviderScope(
-      child: TachomiNovelApp(),
+      child: MaterialApp(
+        home: LoadingScreen(),
+        debugShowCheckedModeBanner: false,
+      ),
     ),
   );
 }

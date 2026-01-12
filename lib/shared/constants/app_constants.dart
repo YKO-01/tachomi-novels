@@ -45,10 +45,10 @@ class AppConstants {
   static const String filterAll = 'All';
   static const String filterCompleted = 'Completed';
   static const String filterOngoing = 'Ongoing';
-  static const String filterRomance = 'Romance';
-  static const String filterAction = 'Action';
-  static const String filterSliceOfLife = 'Slice of Life';
-  static const String filterFantasy = 'Fantasy';
+  static const String filterDramatic = 'Dramatic';
+  static const String filterRevenge = 'Revenge';
+  static const String filterLove = 'Love';
+  static const String filterRomantic = 'Romantic';
   static const String filterMystery = 'Mystery';
   static const String filterDrama = 'Drama';
   static const String filterComedy = 'Comedy';

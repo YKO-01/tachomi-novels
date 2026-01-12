@@ -80,7 +80,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(readerState.chapter?.title ?? 'Loading...'),
+        title: Text("chapter ${readerState.chapter?.chapterNumber}"),
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
@@ -386,7 +386,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           children: [
             // Chapter Title
             Text(
-              chapter.title,
+              "Chapter ${chapter.chapterNumber}",
               style: _getTextStyle(
                 fontSize: readerSettings.fontSize + 4,
                 color: theme.textColor,

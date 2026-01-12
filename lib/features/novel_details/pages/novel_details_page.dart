@@ -319,7 +319,7 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                             ),
                     ),
                     title: Text(
-                      chapter.title,
+                      "chapter ${chapter.chapterNumber}",
                       style: TextStyle(
                         fontWeight: isRead ? FontWeight.w500 : FontWeight.normal,
                         color: isRead 

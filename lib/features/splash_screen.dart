@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
@@ -26,6 +28,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
       var url = Uri.parse(Constants.jsonConfigUrl);
       var response = await http.get(url);
       if (response.statusCode == 200) {
+        var data2 = json.decode(response.body);
         gAds = MultiAds(response.body);
         await gAds.init();
         await gAds.loadAds();
@@ -70,11 +73,14 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
+        width: screenWidth,
+        height: screenHeight,
         color: Colors.black,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -108,7 +114,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   });
                   _initializeApp();
                 },
-                child: const Text(
+                child: Text(
                   'Try Again',
                 ),
               ),

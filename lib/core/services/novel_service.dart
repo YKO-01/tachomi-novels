@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/novel.dart';
 import '../models/chapter.dart';
 import '../../shared/constants/app_constants.dart';
@@ -124,11 +124,20 @@ class NovelService {
     ),
   ];
 
+  // Supabase URLs for remote JSON files
+  static const String _novelsJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_novels.json';
+  static const String _chaptersJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_chapters.json';
+
   Future<List<Novel>> getNovels() async {
     debugPrint('NovelService: getNovels() called');
     try {
-      // Load from JSON file
-      final String jsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      // Load from remote JSON file
+      final response = await http.get(Uri.parse(_novelsJsonUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load novels: ${response.statusCode}');
+      }
+      final String jsonString = response.body;
+     // final String jsonString = await rootBundle.loadString('assets/data/mock_chopters.json');
       final List<dynamic> jsonList = json.decode(jsonString);
       
       final novels = jsonList.map((json) => Novel(
@@ -161,8 +170,13 @@ class NovelService {
   Future<Novel?> getNovelById(String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
     try {
-      // Load from JSON file
-      final String jsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      // Load from remote JSON file
+      final response = await http.get(Uri.parse(_novelsJsonUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load novels: ${response.statusCode}');
+      }
+      final String jsonString = response.body;
+      // final String jsonString = await rootBundle.loadString('assets/data/mock_novels.json');
       final List<dynamic> jsonList = json.decode(jsonString);
       
       final novelJson = jsonList.firstWhere((json) => json['id'] == id);
@@ -196,8 +210,12 @@ class NovelService {
     await Future.delayed(const Duration(milliseconds: 500));
     
     try {
-      // Load from JSON file (which has chapters nested in novels)
-      final String jsonString = await rootBundle.loadString('assets/data/mock_chapters.json');
+      // Load from remote JSON file (which has chapters nested in novels)
+      final response = await http.get(Uri.parse(_chaptersJsonUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load chapters: ${response.statusCode}');
+      }
+      final String jsonString = response.body;
       final List<dynamic> jsonList = json.decode(jsonString);
       
       // Find the novel with matching ID

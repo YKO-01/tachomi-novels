@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../../core/services/network_service.dart';
 import '../../../core/models/novel.dart';
 import '../../../core/models/chapter.dart';
@@ -45,6 +45,10 @@ class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
   }
 
   final bool _isOnline;
+  
+  // Supabase URLs for remote JSON files
+  static const String _novelsJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_novels.json';
+  static const String _chaptersJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_chapters.json';
 
   Future<void> _loadUpdates() async {
     state = const AsyncValue.loading();
@@ -54,12 +58,20 @@ class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
     }
     
     try {
-      // Load novels from JSON
-      final String novelsJsonString = await rootBundle.loadString('assets/data/mock_novels.json');
+      // Load novels from remote JSON
+      final novelsResponse = await http.get(Uri.parse(_novelsJsonUrl));
+      if (novelsResponse.statusCode != 200) {
+        throw Exception('Failed to load novels: ${novelsResponse.statusCode}');
+      }
+      final String novelsJsonString = novelsResponse.body;
       final List<dynamic> novelsJsonList = json.decode(novelsJsonString);
       
-      // Load chapters from JSON (which has chapters nested in novels)
-      final String chaptersJsonString = await rootBundle.loadString('assets/data/mock_chapters.json');
+      // Load chapters from remote JSON (which has chapters nested in novels)
+      final chaptersResponse = await http.get(Uri.parse(_chaptersJsonUrl));
+      if (chaptersResponse.statusCode != 200) {
+        throw Exception('Failed to load chapters: ${chaptersResponse.statusCode}');
+      }
+      final String chaptersJsonString = chaptersResponse.body;
       final List<dynamic> chaptersJsonList = json.decode(chaptersJsonString);
       
       // Create a map of novel ID to Novel object

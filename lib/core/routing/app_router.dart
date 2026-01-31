@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tachomi_novel/const.dart';
 import '../../features/library/pages/library_page.dart';
 import '../../features/browse/pages/browse_page.dart';
 import '../../features/favorites/pages/favorites_page.dart';
@@ -12,7 +13,7 @@ import '../../shared/constants/app_constants.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: AppConstants.routeLibrary,
+    initialLocation: AppConstants.routeUpdates,
     routes: [
       // Main Navigation Shell
       ShellRoute(
@@ -21,14 +22,14 @@ class AppRouter {
         },
         routes: [
           GoRoute(
-            path: AppConstants.routeLibrary,
-            name: 'library',
-            builder: (context, state) => const LibraryPage(),
-          ),
-          GoRoute(
             path: AppConstants.routeUpdates,
             name: 'updates',
             builder: (context, state) => const BrowsePage(),
+          ),
+          GoRoute(
+            path: AppConstants.routeLibrary,
+            name: 'library',
+            builder: (context, state) => const LibraryPage(),
           ),
           GoRoute(
             path: AppConstants.routeHistory,
@@ -107,31 +108,36 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           
           switch (index) {
             case 0:
-              context.go(AppConstants.routeLibrary);
+              context.go(AppConstants.routeUpdates);
+              gAds.interInstance.showInterstitialAd();
               break;
             case 1:
-              context.go(AppConstants.routeUpdates);
+              context.go(AppConstants.routeLibrary);
+              gAds.interInstance.showInterstitialAd();
               break;
             case 2:
               context.go(AppConstants.routeHistory);
+              gAds.interInstance.showInterstitialAd();
               break;
             case 3:
               context.go(AppConstants.routeBrowse);
+              gAds.interInstance.showInterstitialAd();
               break;
             case 4:
               context.go(AppConstants.routeMore);
+              gAds.interInstance.showInterstitialAd();
               break;
           }
         },
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Library',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.update),
             label: 'Updates',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.library_books),
+            label: 'Library',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),

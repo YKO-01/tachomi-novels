@@ -178,9 +178,10 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           final novel = novels[index];
           return NovelCard(
             novel: novel,
-            onTap: () => gAds.rewardInstance.showRewardAd(() {
+            onTap: () {
+              gAds.interInstance.showAdIfAvailableOpenAds();
               _navigateToNovelDetails(novel.id);
-            }),
+            },
             onLongPress: () => _showNovelOptions(novel),
           );
         },

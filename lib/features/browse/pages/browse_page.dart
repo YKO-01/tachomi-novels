@@ -210,10 +210,8 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           return NovelCard(
             novel: novel,
             onTap: () {
-              print("-------- you are enter the details");
-              gAds.rewardInstance.showRewardAd((){
-                _navigateToNovelDetails(novel.id);
-              });
+              gAds.interInstance.showAdIfAvailableOpenAds();
+              _navigateToNovelDetails(novel.id);
             },
             onLongPress: () => _showNovelOptions(novel),
           );

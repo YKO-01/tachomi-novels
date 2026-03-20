@@ -176,9 +176,10 @@ class HistoryPage extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
       ),
       child: InkWell(
-        onTap: () => gAds.rewardInstance.showRewardAd(() {
+        onTap: () {
+          gAds.interInstance.showAdIfAvailableOpenAds();
           _navigateToReader(context, history);
-        }),
+        },
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.spacingM),

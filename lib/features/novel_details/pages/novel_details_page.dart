@@ -42,9 +42,8 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
             final novel = data['novel'] as Novel;
             final chapters = data['chapters'] as List<Chapter>;
             if (chapters.isNotEmpty) {
-              gAds.rewardInstance.showRewardAd(() {
-                context.push('/reader/${novel.id}/${chapters.first.id}');
-              });
+              gAds.interInstance.showInterstitialAd();
+              context.push('/reader/${novel.id}/${chapters.first.id}');
             }
           },
           icon: const Icon(Icons.play_arrow),
@@ -387,9 +386,8 @@ class _NovelDetailsPageState extends ConsumerState<NovelDetailsPage> {
                 // ),
                     onTap: () {
                       // Navigate to reader
-                      gAds.rewardInstance.showRewardAd(() {
-                        context.push('/reader/${novel.id}/${chapter.id}');
-                      });
+                      gAds.interInstance.showInterstitialAd();
+                      context.push('/reader/${novel.id}/${chapter.id}');
                     },
                   );
                 },

@@ -8,6 +8,7 @@ import 'shared/constants/app_constants.dart';
 import 'core/models/chapter.dart';
 import 'features/more/providers/settings_provider.dart';
 
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();

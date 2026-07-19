@@ -46,9 +46,11 @@ class UpdatesNotifier extends StateNotifier<AsyncValue<List<UpdateItem>>> {
 
   final bool _isOnline;
   
-  // Supabase URLs for remote JSON files
-  static const String _novelsJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_novels.json';
-  static const String _chaptersJsonUrl = 'https://dufgldnpzvzrmpwmskli.supabase.co/storage/v1/object/public/json-novels/mock_chapters.json';
+  // Google Drive direct-download URLs for remote JSON files.
+  // Share links (drive.google.com/file/d/<ID>/view) are converted to the
+  // direct-download form: drive.google.com/uc?export=download&id=<ID>
+  static const String _novelsJsonUrl = 'https://drive.google.com/uc?export=download&id=1xTJS8NaPS-S1i5rRmWzNNVeAX18l2p7i';
+  static const String _chaptersJsonUrl = 'https://drive.google.com/uc?export=download&id=CHAPTERS_FILE_ID';
 
   Future<void> _loadUpdates() async {
     state = const AsyncValue.loading();

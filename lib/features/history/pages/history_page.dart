@@ -177,7 +177,7 @@ class HistoryPage extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: () {
-          gAds.interInstance.showAdIfAvailableOpenAds();
+          gAds.interInstance.showInterstitialAd();
           _navigateToReader(context, history);
         },
         borderRadius: BorderRadius.circular(AppConstants.cardRadius),
@@ -371,8 +371,12 @@ class HistoryPage extends ConsumerWidget {
   }
 
   void _navigateToReader(BuildContext context, NovelHistory history) {
-    // Navigate to reader with the last chapter
-    context.push('/reader/${history.novelId}/${history.lastChapterId}');
+    // Manga history entries use ids prefixed with "manga-"
+    if (history.novelId.startsWith('manga-')) {
+      context.push('/manga-reader/${history.novelId}/${history.lastChapterId}');
+    } else {
+      context.push('/reader/${history.novelId}/${history.lastChapterId}');
+    }
   }
 
   void _removeNovelFromHistory(WidgetRef ref, NovelHistory history) {

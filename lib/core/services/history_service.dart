@@ -4,6 +4,8 @@ import 'dart:convert';
 import '../models/novel.dart';
 import '../models/chapter.dart';
 import '../models/novel_history.dart';
+import '../models/manga.dart';
+import '../models/manga_chapter.dart';
 
 /// HistoryService - Manages reading history data
 /// Uses SharedPreferences for persistence with proper error handling
@@ -75,6 +77,44 @@ class HistoryService {
       
     } catch (error) {
       debugPrint('HistoryService: Error adding novel to history - $error');
+      rethrow;
+    }
+  }
+
+  static Future<void> addMangaToHistory(Manga manga, MangaChapter chapter) async {
+    await _ensureInitialized();
+
+    debugPrint('HistoryService: Adding manga to history - ${manga.title} (ID: ${manga.id})');
+
+    try {
+      final existingIndex = _cachedHistories.indexWhere(
+        (history) => history.novelId == manga.id
+      );
+
+      // Reuse NovelHistory for manga entries: author holds the manga type,
+      // manga ids are prefixed with "manga-" so pages can tell them apart.
+      final updatedHistory = NovelHistory(
+        id: 'manga_${manga.id}',
+        novelId: manga.id,
+        novelTitle: manga.title,
+        author: manga.type,
+        coverUrl: manga.coverImage,
+        lastRead: DateTime.now(),
+        lastChapterId: chapter.id,
+        lastChapterTitle: chapter.title,
+        lastChapterNumber: chapter.number.toInt(),
+      );
+
+      if (existingIndex >= 0) {
+        _cachedHistories[existingIndex] = updatedHistory;
+      } else {
+        _cachedHistories.insert(0, updatedHistory);
+      }
+
+      _cachedHistories.sort((a, b) => b.lastRead.compareTo(a.lastRead));
+      await _persistData();
+    } catch (error) {
+      debugPrint('HistoryService: Error adding manga to history - $error');
       rethrow;
     }
   }

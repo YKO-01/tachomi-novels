@@ -3,8 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel.dart';
+import '../../../core/models/manga.dart';
+import '../../../core/providers/content_type_provider.dart';
+import '../../../core/services/favorites_service.dart';
 import '../../../shared/widgets/novel_card.dart';
+import '../../../shared/widgets/manga_card.dart';
+import '../../../shared/widgets/content_type_toggle.dart';
 import '../../../shared/constants/app_constants.dart';
+import '../../manga/providers/manga_providers.dart';
 import '../providers/favorites_provider.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -36,12 +42,14 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
   @override
   Widget build(BuildContext context) {
     final favoritesState = ref.watch(favoritesNotifierProvider);
+    final contentType = ref.watch(contentTypeProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorites'),
         actions: [
+          const ContentTypeToggle(),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,
@@ -52,7 +60,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
           ),
         ],
       ),
-      body: favoritesState.when(
+      body: contentType == ContentType.manga
+          ? _buildMangaFavorites()
+          : favoritesState.when(
         data: (novels) => _buildFavoritesGrid(novels),
         loading: () => const Center(
           child: CircularProgressIndicator(),
@@ -86,6 +96,130 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMangaFavorites() {
+    final mangaFavoritesState = ref.watch(mangaFavoritesProvider);
+    final theme = Theme.of(context);
+
+    return mangaFavoritesState.when(
+      data: (mangas) => _buildMangaGrid(mangas),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            Text(
+              'Failed to load favorites',
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            ElevatedButton(
+              onPressed: () {
+                ref.invalidate(mangaFavoritesProvider);
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMangaGrid(List<Manga> mangas) {
+    if (mangas.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.favorite_border,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: AppConstants.spacingM),
+            Text(
+              'No favorite manga yet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: AppConstants.spacingS),
+            Text(
+              'Tap the heart icon on any manga to add it to favorites',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(AppConstants.spacingS),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: AppConstants.gridCrossAxisCount,
+          childAspectRatio: AppConstants.gridChildAspectRatio,
+          crossAxisSpacing: AppConstants.gridSpacing,
+          mainAxisSpacing: AppConstants.gridSpacing,
+        ),
+        itemCount: mangas.length,
+        itemBuilder: (context, index) {
+          final manga = mangas[index];
+          return MangaCard(
+            manga: manga,
+            onTap: () {
+              gAds.interInstance.showInterstitialAd();
+              context.push('/manga-details/${manga.id}');
+            },
+            onLongPress: () => _showMangaOptions(manga),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showMangaOptions(Manga manga) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppConstants.spacingM),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.favorite, color: Colors.red),
+              title: const Text('Remove from Favorites'),
+              onTap: () async {
+                Navigator.pop(context);
+                await FavoritesService.removeFromFavorites(manga.id);
+                ref.invalidate(mangaFavoritesProvider);
+                _showRemovedSnackBar(manga.title);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('View Details'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/manga-details/${manga.id}');
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -139,7 +273,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
           return NovelCard(
             novel: novel,
             onTap: () {
-              gAds.interInstance.showAdIfAvailableOpenAds();
+              gAds.interInstance.showInterstitialAd();
               _navigateToNovelDetails(novel.id);
             },
             onLongPress: () => _showNovelOptions(novel),

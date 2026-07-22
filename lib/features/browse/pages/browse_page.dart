@@ -7,6 +7,10 @@ import '../../../core/services/library_service.dart';
 import '../../../shared/widgets/novel_card.dart';
 import '../../../shared/widgets/filter_chip.dart' as custom;
 import '../../../shared/constants/app_constants.dart';
+import '../../../shared/widgets/content_type_toggle.dart';
+import '../../../core/providers/content_type_provider.dart';
+import '../../manga/pages/manga_browse_view.dart';
+import '../../manga/providers/manga_providers.dart';
 import '../providers/browse_provider.dart';
 
 class BrowsePage extends ConsumerStatefulWidget {
@@ -40,6 +44,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
   @override
   Widget build(BuildContext context) {
     final browseState = ref.watch(browseNotifierProvider);
+    final contentType = ref.watch(contentTypeProvider);
     final theme = Theme.of(context);
 
     print('BrowsePage: Building with state: $browseState');
@@ -48,6 +53,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
       appBar: AppBar(
         title: const Text('Updates'),
         actions: [
+          const ContentTypeToggle(),
           // IconButton(
           //   icon: const Icon(Icons.cloud_download),
           //   tooltip: 'Scrape Novels',
@@ -75,7 +81,9 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           ),
         ],
       ),
-      body: Column(
+      body: contentType == ContentType.manga
+          ? const MangaBrowseView()
+          : Column(
         children: [
           // Filter Chips
           Container(
@@ -210,7 +218,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           return NovelCard(
             novel: novel,
             onTap: () {
-              gAds.interInstance.showAdIfAvailableOpenAds();
+              gAds.interInstance.showInterstitialAd();
               _navigateToNovelDetails(novel.id);
             },
             onLongPress: () => _showNovelOptions(novel),
@@ -322,15 +330,18 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
   }
 
   void _showSearchDialog() {
+    final isManga = ref.read(contentTypeProvider) == ContentType.manga;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Search Novels'),
+        title: Text(isManga ? 'Search Manga' : 'Search Novels'),
         content: TextField(
           controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Enter novel title or author...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: isManga
+                ? 'Enter manga title or genre...'
+                : 'Enter novel title or author...',
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -341,13 +352,25 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(browseNotifierProvider.notifier).searchNovels(_searchController.text);
+              if (isManga) {
+                ref.read(mangaBrowseNotifierProvider.notifier).searchMangas(_searchController.text);
+              } else {
+                ref.read(browseNotifierProvider.notifier).searchNovels(_searchController.text);
+              }
             },
             child: const Text('Search'),
           ),
         ],
       ),
     );
+  }
+
+  void _applySort(String sortBy) {
+    if (ref.read(contentTypeProvider) == ContentType.manga) {
+      ref.read(mangaBrowseNotifierProvider.notifier).sortMangas(sortBy);
+    } else {
+      ref.read(browseNotifierProvider.notifier).sortNovels(sortBy);
+    }
   }
 
   void _showSortDialog() {
@@ -367,7 +390,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
+                _applySort(value!);
               },
             ),
             RadioListTile<String>(
@@ -379,7 +402,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
+                _applySort(value!);
               },
             ),
             RadioListTile<String>(
@@ -391,7 +414,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
+                _applySort(value!);
               },
             ),
             RadioListTile<String>(
@@ -403,7 +426,7 @@ class _BrowsePageState extends ConsumerState<BrowsePage> {
                   _selectedSort = value!;
                 });
                 Navigator.pop(context);
-                ref.read(browseNotifierProvider.notifier).sortNovels(value!);
+                _applySort(value!);
               },
             ),
           ],

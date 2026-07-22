@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tachomi_novel/const.dart';
 import '../../../core/models/novel.dart';
+import '../../../core/models/manga.dart';
+import '../../../core/providers/content_type_provider.dart';
 import '../../../shared/widgets/novel_card.dart';
+import '../../../shared/widgets/manga_card.dart';
+import '../../../shared/widgets/content_type_toggle.dart';
 import '../../../shared/widgets/filter_chip.dart' as custom;
 import '../../../shared/constants/app_constants.dart';
+import '../../manga/providers/manga_providers.dart';
 import '../providers/library_provider.dart';
 
 class LibraryPage extends ConsumerStatefulWidget {
@@ -40,12 +45,14 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
     // Watch library changes to refresh when novels are added/removed
     ref.watch(libraryNotifierProvider);
     final libraryState = ref.watch(libraryNotifierProvider);
+    final contentType = ref.watch(contentTypeProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Library'),
         actions: [
+          const ContentTypeToggle(),
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _showSearchDialog,
@@ -87,9 +94,11 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             ),
           ),
           
-          // Novels Grid
+          // Content Grid
           Expanded(
-            child: libraryState.when(
+            child: contentType == ContentType.manga
+                ? _buildMangaLibrary()
+                : libraryState.when(
               data: (novels) => _buildNovelsGrid(novels),
               loading: () => const Center(
                 child: CircularProgressIndicator(),
@@ -127,6 +136,106 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMangaLibrary() {
+    final mangaLibraryState = ref.watch(mangaLibraryProvider);
+    final theme = Theme.of(context);
+
+    return mangaLibraryState.when(
+      data: (mangas) {
+        // Apply the status filter chips (All / Completed / Ongoing)
+        List<Manga> filteredMangas = mangas;
+        if (_selectedFilter == AppConstants.filterCompleted) {
+          filteredMangas = mangas.where((manga) => manga.status == AppConstants.statusCompleted).toList();
+        } else if (_selectedFilter == AppConstants.filterOngoing) {
+          filteredMangas = mangas.where((manga) => manga.status == AppConstants.statusOngoing).toList();
+        }
+        return _buildMangaGrid(filteredMangas);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            Text(
+              'Failed to load manga library',
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: AppConstants.spacingM),
+            ElevatedButton(
+              onPressed: () {
+                ref.invalidate(mangaLibraryProvider);
+              },
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMangaGrid(List<Manga> mangas) {
+    if (mangas.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.library_books_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: AppConstants.spacingM),
+            Text(
+              'No manga in library',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: AppConstants.spacingS),
+            Text(
+              'Long press a manga in Updates to add it',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(AppConstants.spacingS),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: AppConstants.gridCrossAxisCount,
+          childAspectRatio: AppConstants.gridChildAspectRatio,
+          crossAxisSpacing: AppConstants.gridSpacing,
+          mainAxisSpacing: AppConstants.gridSpacing,
+        ),
+        itemCount: mangas.length,
+        itemBuilder: (context, index) {
+          final manga = mangas[index];
+          return MangaCard(
+            manga: manga,
+            onTap: () {
+              gAds.interInstance.showInterstitialAd();
+              context.push('/manga-details/${manga.id}');
+            },
+          );
+        },
       ),
     );
   }
@@ -179,7 +288,7 @@ class _LibraryPageState extends ConsumerState<LibraryPage> {
           return NovelCard(
             novel: novel,
             onTap: () {
-              gAds.interInstance.showAdIfAvailableOpenAds();
+              gAds.interInstance.showInterstitialAd();
               _navigateToNovelDetails(novel.id);
             },
             onLongPress: () => _showNovelOptions(novel),

@@ -9,10 +9,15 @@ import '../../features/novel_details/pages/novel_details_page.dart';
 import '../../features/more/pages/more_page.dart';
 import '../../features/reader/pages/reader_page.dart';
 import '../../features/download_queue/pages/download_queue_page.dart';
+import '../../features/manga/pages/manga_details_page.dart';
+import '../../features/manga/pages/manga_reader_page.dart';
 import '../../shared/constants/app_constants.dart';
 
 class AppRouter {
+  static final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+
   static final GoRouter router = GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation: AppConstants.routeUpdates,
     routes: [
       // Main Navigation Shell
@@ -70,6 +75,28 @@ class AppRouter {
         },
       ),
       
+      // Manga Details
+      GoRoute(
+        path: '/manga-details/:mangaId',
+        name: 'manga-details',
+        builder: (context, state) {
+          final mangaId = state.pathParameters['mangaId']!;
+          return MangaDetailsPage(mangaId: mangaId);
+        },
+      ),
+
+      // Manga Reader (opens above the navigation shell, full screen)
+      GoRoute(
+        path: '/manga-reader/:mangaId/:chapterId',
+        name: 'manga-reader',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final mangaId = state.pathParameters['mangaId']!;
+          final chapterId = state.pathParameters['chapterId']!;
+          return MangaReaderPage(mangaId: mangaId, chapterId: chapterId);
+        },
+      ),
+
       // Download Queue
       GoRoute(
         path: '/download-queue',

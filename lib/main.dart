@@ -7,16 +7,18 @@ import 'core/theme/app_theme.dart';
 import 'shared/constants/app_constants.dart';
 import 'core/models/chapter.dart';
 import 'features/more/providers/settings_provider.dart';
+import 'package:tachomi_novel/core/services/revenuecat_service.dart';
 
 
 Future<void> main() async {
+  // await RevenueCatService().init('appl_QvnPcTsAqeeOXJMPunoFjGwnlmF');
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   // Register Hive adapters for offline storage
   if (!Hive.isAdapterRegistered(1)) {
     Hive.registerAdapter(ChapterAdapter());
   }
-
+  await RevenueCatService().init('appl_bNspcABlPpFjrUnpHWorfzSqzfP');
   runApp(
     const ProviderScope(
       child: MaterialApp(

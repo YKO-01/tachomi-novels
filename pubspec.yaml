@@ -65,6 +65,10 @@ dependencies:
   
   # Web Scraping
   html: ^0.15.4
+  url_launcher: ^6.3.1
+
+  purchases_flutter: ^9.15.1
+
 
 dev_dependencies:
   flutter_test:

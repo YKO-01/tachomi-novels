@@ -10,6 +10,7 @@ import '../../../core/services/library_service.dart';
 import '../../../core/services/library_management_service.dart';
 import '../../history/providers/history_provider.dart';
 import '../../favorites/providers/favorites_provider.dart';
+import '../../paywall_screen.dart';
 
 class MorePage extends ConsumerStatefulWidget {
   const MorePage({super.key});
@@ -44,6 +45,27 @@ class _MorePageState extends ConsumerState<MorePage> {
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.spacingM),
         children: [
+
+          _buildSection(
+            context,
+            'Premium',
+            [
+              _buildListTile(
+                context,
+                'Go Premium',
+                'Unlock all premium features',
+                Icons.workspace_premium,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaywallScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
           // Appearance Section
           _buildSection(
             context,

@@ -12,6 +12,8 @@ import '../../features/download_queue/pages/download_queue_page.dart';
 import '../../features/manga/pages/manga_details_page.dart';
 import '../../features/manga/pages/manga_reader_page.dart';
 import '../../shared/constants/app_constants.dart';
+import 'package:tachomi_novel/features/paywall_screen.dart';
+
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -121,6 +123,18 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
+
+  @override void initState() {
+    // TODO: implement initState
+    super.initState();
+       Future.delayed(Duration(seconds: 1), () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PaywallScreen()),
+        );
+        // gAds.openAdsInstance.showAdIfAvailableOpenAds();
+      });
+  }
 
   @override
   Widget build(BuildContext context) {
